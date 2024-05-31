@@ -1,8 +1,9 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
-from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
 
 # Services
+from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
+from services.modules.visit.visit_queries import get_all_visit
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -35,9 +36,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Pin opened...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
     elif query.data == '3':
+        res = await get_all_visit()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing history...\n", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing history...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
     elif query.data == '4':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
