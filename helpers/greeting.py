@@ -16,7 +16,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = await get_all_pin()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing location...\n\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing location...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
     elif query.data == '2':
         res = await get_all_pin_name()
         keyboard = []
@@ -33,7 +33,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_location(chat_id=query.message.chat_id, latitude=pin_lat, longitude=pin_long)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Pin opened...\n\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Pin opened...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
     elif query.data == '3':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
