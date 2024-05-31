@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
-from services.modules.pin.pin_queries import get_all_pin
+from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
 
 # Services
 
@@ -16,11 +16,24 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = await get_all_pin()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing location...\n{res}", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing location...\n\n{res}", reply_markup=reply_markup)
     elif query.data == '2':
+        res = await get_all_pin_name()
+        keyboard = []
+        for dt in res:
+            keyboard.append([InlineKeyboardButton(dt.pin_name, callback_data='detail_pin_'+dt.id)])
+            
+        keyboard.append([InlineKeyboardButton("Back", callback_data='back')])
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text=f"Showing location...", reply_markup=reply_markup)
+    elif query.data.startswith('detail_pin_'):
+        pin_id = query.data.split('_')[2]
+        res, pin_lat, pin_long = await get_detail_pin(pin_id)
+        if pin_lat is not None and pin_long is not None:
+            await context.bot.send_location(chat_id=query.message.chat_id, latitude=pin_lat, longitude=pin_long)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing location...\n", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Pin opened...\n\n{res}", reply_markup=reply_markup)
     elif query.data == '3':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
