@@ -1,5 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
+from services.modules.pin.pin_queries import get_all_pin
 
 # Services
 
@@ -12,9 +13,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Handle different button presses here
     if query.data == '1':
+        res = await get_all_pin()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing location...\n", reply_markup=reply_markup)
+        await query.edit_message_text(text=f"Showing location...\n{res}", reply_markup=reply_markup)
     elif query.data == '2':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -42,8 +44,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main_menu_keyboard():
     keyboard = [
-        [InlineKeyboardButton("1. Show my location", callback_data='1')],
-        [InlineKeyboardButton("2. Show detail location", callback_data='2')],
+        [InlineKeyboardButton("1. Show my pin", callback_data='1')],
+        [InlineKeyboardButton("2. Show detail pin", callback_data='2')],
         [InlineKeyboardButton("3. History visit", callback_data='3')],
         [InlineKeyboardButton("4. Dashboard", callback_data='4')],
         [InlineKeyboardButton("5. Change password", callback_data='5')],
