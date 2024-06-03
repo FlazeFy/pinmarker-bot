@@ -1,9 +1,65 @@
 from configs.configs import con
 from sqlalchemy import text
 from sqlalchemy import select, desc, and_
+from datetime import datetime, timedelta
 
 from services.modules.pin.pin_model import pin
 from services.modules.visit.visit_model import visit
+from services.modules.stats.template import get_total_item_by_context
+
+async def get_stats():
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    userId = "fcd3f23e-e5aa-11ee-892a-3216422910e9"
+
+    dt_total_pin_by_category = await get_total_item_by_context(tableName="pin", join=None, targetColumn="pin_category")
+    dt_total_visit_by_category = await get_total_item_by_context(tableName="visit", join="pin on pin.id = visit.pin_id", targetColumn="pin_category")
+    dt_total_gallery_by_pin = await get_total_item_by_context(tableName="gallery", join="pin on pin.id = gallery.pin_id", targetColumn="pin_name")
+
+    year = datetime(datetime.now().year, 1, 1).strftime('%Y')
+    sql_visit_by_month = text(f"""
+        SELECT DATE_FORMAT(visit.created_at, '%M') AS context, COUNT(1) AS total
+        FROM visit
+        JOIN pin ON visit.pin_id = pin.id
+        WHERE pin.deleted_at IS NULL
+        AND pin.created_by = '{userId}'
+        AND YEAR(visit.created_at) = '{year}'
+        GROUP BY context
+        ORDER BY context DESC
+    """)
+    result = con.execute(sql_visit_by_month)
+    data_visit_by_month = [dict(zip(result.keys(), row)) for row in result.fetchall()]
+    dt_total_visit_by_month = []
+
+    for m in months:
+        for dt in data_visit_by_month:
+            if m == dt['context']:
+                dt_total_visit_by_month.append({
+                    'context': dt['context'],
+                    'total': dt['total']
+                })
+        dt_total_visit_by_month.append({
+            'context': m,
+            'total': 0
+        })
+            
+
+    res = f"<b>Total Pin By Category:</b>\n"
+    for dt in dt_total_pin_by_category:
+        res += f"- {dt.context} : {dt.total}\n"
+
+    res += f"\n<b>Total Visit By Category:</b>\n"
+    for dt in dt_total_visit_by_category:
+        res += f"- {dt.context} : {dt.total}\n"
+
+    res += f"\n<b>Total Gallery By Pin:</b>\n"
+    for dt in dt_total_gallery_by_pin:
+        res += f"- {dt.context} : {dt.total}\n"
+
+    res += f"\n<b>Total Visit By Month in {year}:</b>\n"
+    for dt in dt_total_visit_by_month:
+        res += f"- {dt['context']} : {dt['total']}\n"
+
+    return res
 
 async def get_dashboard():
     userId = "fcd3f23e-e5aa-11ee-892a-3216422910e9"

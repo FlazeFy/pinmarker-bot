@@ -4,7 +4,7 @@ from telegram.ext import ContextTypes
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
 from services.modules.visit.visit_queries import get_all_visit
-from services.modules.stats.stats_queries import get_dashboard
+from services.modules.stats.stats_queries import get_dashboard, get_stats
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -47,6 +47,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing dashboard...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
     elif query.data == '5':
+        res = await get_stats()
+        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text=f"Showing stats...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
+    elif query.data == '6':
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Preparing field...\n", reply_markup=reply_markup)
@@ -65,7 +70,8 @@ def main_menu_keyboard():
         [InlineKeyboardButton("2. Show detail pin", callback_data='2')],
         [InlineKeyboardButton("3. History visit", callback_data='3')],
         [InlineKeyboardButton("4. Dashboard", callback_data='4')],
-        [InlineKeyboardButton("5. Change password", callback_data='5')],
+        [InlineKeyboardButton("5. Stats", callback_data='5')],
+        [InlineKeyboardButton("6. Change password", callback_data='6')],
         [InlineKeyboardButton("0. Exit bot", callback_data='0')]
     ]
     return InlineKeyboardMarkup(keyboard)
