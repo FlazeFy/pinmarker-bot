@@ -145,7 +145,7 @@ async def get_dashboard():
         f"<b>Total Marker: {data_total_marker.total}</b>\n"
         f"<b>Total Favorite : {data_total_favorite.total}</b>\n"
         f"<b>Last Visit : {data_last_visit.pin_name}</b>\n"
-        f"<b>Most Visit : ({data_most_visit.total}) {data_most_category.context}</b>\n"
+        f"<b>Most Visit : ({data_most_visit.total}) {data_most_visit.context}</b>\n"
         f"<b>Most Category : ({data_most_category.total}) {data_most_category.context}</b>\n"
         f"<b>Last Added : {data_last_added.pin_name}</b>\n"
     )

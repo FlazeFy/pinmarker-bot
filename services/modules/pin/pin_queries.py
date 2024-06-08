@@ -29,7 +29,7 @@ async def get_all_pin():
 
     for dt in data:
         if pin_category_before == '' or pin_category_before != dt.pin_category:
-            res += f"<b>Category: {dt.pin_category}</b>\n"
+            res += f"<b>Category: {dt.pin_category}</b>\n\n"
             pin_category_before = dt.pin_category
             i = 1
         

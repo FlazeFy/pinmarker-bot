@@ -3,3 +3,4 @@
 reports/csv/report-activity.csv
 *DS_Store
 configs/email.json
+configs/discord.json
