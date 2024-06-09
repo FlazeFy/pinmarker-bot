@@ -1,9 +1,10 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
+import io
 
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
-from services.modules.visit.visit_queries import get_all_visit
+from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
 from services.modules.stats.stats_queries import get_dashboard, get_stats
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,6 +42,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing history...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
+    elif query.data == '3/csv':
+        csv_content, file_name = await get_all_visit_csv(platform='telegram')
+        file = io.BytesIO(csv_content.encode('utf-8'))
+        file.name = file_name        
+        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.message.reply_document(document=file, caption="Generate CSV file of history...\n\n", reply_markup=reply_markup)
     elif query.data == '4':
         res = await get_dashboard()
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -69,6 +77,7 @@ def main_menu_keyboard():
         [InlineKeyboardButton("1. Show my pin", callback_data='1')],
         [InlineKeyboardButton("2. Show detail pin", callback_data='2')],
         [InlineKeyboardButton("3. History visit", callback_data='3')],
+        [InlineKeyboardButton("3.1 History visit in CSV ", callback_data='3/csv')],
         [InlineKeyboardButton("4. Dashboard", callback_data='4')],
         [InlineKeyboardButton("5. Stats", callback_data='5')],
         [InlineKeyboardButton("6. Change password", callback_data='6')],

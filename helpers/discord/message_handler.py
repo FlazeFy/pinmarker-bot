@@ -1,7 +1,8 @@
 from services.modules.pin.pin_queries import get_all_pin
-from services.modules.visit.visit_queries import get_all_visit
+from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
 from helpers.discord.typography import send_long_message,convert_html_to_discord_chat
 from services.modules.stats.stats_queries import get_dashboard, get_stats
+from discord import File
 
 async def on_message_handler(bot, message):
     if message.author == bot.user:
@@ -21,6 +22,9 @@ async def on_message_handler(bot, message):
     elif message.content == '3':
         res = await get_all_visit()
         await send_long_message(message.channel, f"Showing history...\n\n{convert_html_to_discord_chat(res)}")
+    elif message.content == '3/csv':
+        file, file_name = await get_all_visit_csv(platform='discord')
+        await message.channel.send("Generate CSV file of history...\n\n", file=File(file, filename=file_name))
     elif message.content == '4':
         res = await get_dashboard()
         await message.channel.send(f"Showing dashboard...\n\n{convert_html_to_discord_chat(res)}")
