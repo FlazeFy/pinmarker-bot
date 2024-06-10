@@ -3,6 +3,13 @@ from typing import Final
 from telegram import Update
 from telegram.ext import Application, CommandHandler,  CallbackQueryHandler
 
+from configs.configs import cred
+import firebase_admin
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://pinmarker-36552-default-rtdb.firebaseio.com/',
+    'storageBucket': 'pinmarker-36552.appspot.com'
+})
+
 # Helpers
 from helpers.greeting import start_command, button
 
