@@ -6,6 +6,7 @@ import io
 from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
 from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
 from services.modules.stats.stats_queries import get_dashboard, get_stats
+from services.modules.track.track_queries import get_last_tracker_position
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -63,8 +64,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Preparing field...\n", reply_markup=reply_markup)
-    elif query.data == '0':
-        await query.edit_message_text(text="Exiting bot...")
+    elif query.data == '7':
+        track_lat, track_long, msg = await get_last_tracker_position()
+        if track_lat is not None and track_long is not None:
+            await context.bot.send_location(chat_id=query.message.chat_id, latitude=track_lat, longitude=track_long)
+        keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(text=f"Showing last track position...\n{msg}\n", reply_markup=reply_markup, parse_mode='HTML')
     elif query.data == 'back':
         await query.edit_message_text(text='What do you want:', reply_markup= main_menu_keyboard())
 
@@ -81,6 +87,7 @@ def main_menu_keyboard():
         [InlineKeyboardButton("4. Dashboard", callback_data='4')],
         [InlineKeyboardButton("5. Stats", callback_data='5')],
         [InlineKeyboardButton("6. Change password", callback_data='6')],
+        [InlineKeyboardButton("7. Last Live Tracker Position", callback_data='7')],
         [InlineKeyboardButton("0. Exit bot", callback_data='0')]
     ]
     return InlineKeyboardMarkup(keyboard)

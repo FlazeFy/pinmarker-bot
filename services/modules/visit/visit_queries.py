@@ -3,15 +3,10 @@ from services.modules.visit.visit_model import visit
 from configs.configs import con
 import csv
 from sqlalchemy import select, desc
-import firebase_admin
 import io
-from firebase_admin import credentials, storage
+from firebase_admin import storage
 from datetime import datetime
 
-cred = credentials.Certificate("configs/pinmarker-36552-firebase-adminsdk-5dett-b688b092f1.json")
-firebase_admin.initialize_app(cred, {
-    'storageBucket': 'pinmarker-36552.appspot.com'
-})
 now = datetime.now()
 now_str = now.strftime("%Y-%m-%d%H:%M:%S")
 

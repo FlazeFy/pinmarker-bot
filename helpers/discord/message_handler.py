@@ -2,6 +2,7 @@ from services.modules.pin.pin_queries import get_all_pin
 from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
 from helpers.discord.typography import send_long_message,convert_html_to_discord_chat
 from services.modules.stats.stats_queries import get_dashboard, get_stats
+from services.modules.track.track_queries import get_last_tracker_position
 from discord import File
 
 async def on_message_handler(bot, message):
@@ -11,7 +12,7 @@ async def on_message_handler(bot, message):
     if bot.user.mentioned_in(message):
         server_name = message.guild.name if message.guild else 'Unknown Server'
         await message.channel.send(f'Hello! everyone in {server_name}. Im PinMarker Bot, what do you want me to do?')
-        await message.channel.send('1. Show my pin\n2. Show detail pin\n3. History visit\n4. Dashboard\n5. Stats\n')
+        await message.channel.send('1. Show my pin\n2. Show detail pin\n3. History visit\n4. Dashboard\n5. Stats\n6. Last Live Tracker Position\n')
 
     if message.content == '!ping':
         server_name = message.guild.name if message.guild else 'Unknown Server'
@@ -31,6 +32,10 @@ async def on_message_handler(bot, message):
     elif message.content == '5':
         res = await get_stats()
         await send_long_message(message.channel, f"Showing stats...\n\n{convert_html_to_discord_chat(res)}")
+    elif message.content == '6':
+        track_lat, track_long, msg = await get_last_tracker_position()
+        await message.channel.send(msg)
+        await send_long_message(message.channel, f"Showing last track position...\nhttps://www.google.com/maps/place/{track_lat},{track_long}\n\n")
 
 
 
