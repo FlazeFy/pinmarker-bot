@@ -261,3 +261,60 @@ async def get_total_distance_by_time_query(userId: str, year: int):
             "message": "No Track journey found",
         }
 
+async def get_activity_around_coordinate_query(userId: str, coor: str):
+    # Attribute
+    ref = db.reference('track_live_' + userId)
+    
+    # Order child index
+    query = ref.order_by_child('created_at')
+    
+    data = query.get()
+    
+    if data:
+        data_values = list(data.values())
+        
+        # Column builder
+        for item in data_values:
+            created_at = datetime.fromisoformat(item['created_at'])
+            item['date'] = created_at.date()
+            if 'battery_indicator' in item:
+                del item['battery_indicator']
+            if 'created_by' in item:
+                del item['created_by']
+            if 'track_type' in item:
+                del item['track_type']
+        
+        # Order by column builder
+        data_values.sort(key=lambda x: x['date'])
+        
+        for i in range(len(data_values)):
+            data_values[i]['coordinate_track'] = f"{data_values[i]['track_lat']},{data_values[i]['track_long']}"
+            data_values[i]['distance'] = calculate_distance(data_values[i]['coordinate_track'], coor)
+        
+        # Group by date and lowest distance
+        grouped_data = {}
+        for item in data_values:
+            date = item['date']
+            if date not in grouped_data or item['distance'] < grouped_data[date]['distance']:
+                grouped_data[date] = item
+        
+        final_data = list(grouped_data.values())
+        
+        # Column builder
+        for item in final_data:
+            if 'track_lat' in item:
+                del item['track_lat']
+            if 'track_long' in item:
+                del item['track_long']
+            if 'coordinate_track' in item:
+                del item['coordinate_track']
+        
+        return {
+            "data": final_data,
+            "message": "Track activity found",
+            "count": len(final_data)
+        }
+    else:
+        return {
+            "message": "No Track activity found",
+        }
