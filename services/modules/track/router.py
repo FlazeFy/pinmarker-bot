@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from services.modules.track.track_queries import get_tracks, get_tracks_period, get_last_tracker_position_api, get_track_by_year_query
+from services.modules.track.track_queries import get_tracks, get_tracks_period, get_last_tracker_position_api, get_total_distance_by_month_query, get_total_distance_by_time_query
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -21,9 +21,16 @@ async def get_last_track(id: str):
         raise HTTPException(status_code=500, detail=str(e))
     
 @router_track.get("/api/v1/track/year/{year}/{id}", response_model=dict)
-async def get_track_by_year(year:int, id: str):
+async def get_total_distance_by_month(year:int, id: str):
     try:
-        return await get_track_by_year_query(userId=id, year=year)
+        return await get_total_distance_by_month_query(userId=id, year=year)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_track.get("/api/v1/track/hour/{year}/{id}", response_model=dict)
+async def get_total_distance_by_time(year:int, id: str):
+    try:
+        return await get_total_distance_by_time_query(userId=id, year=year)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
