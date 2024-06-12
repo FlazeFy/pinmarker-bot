@@ -1,7 +1,7 @@
 import json
 from typing import Final
 from telegram import Update
-from telegram.ext import Application, CommandHandler,  CallbackQueryHandler
+from telegram.ext import Application, CommandHandler,  CallbackQueryHandler, MessageHandler, filters
 
 from configs.configs import cred
 import firebase_admin
@@ -11,7 +11,8 @@ firebase_admin.initialize_app(cred, {
 })
 
 # Helpers
-from helpers.greeting import start_command, button
+from helpers.telegram.message_handler import start_command, button
+from helpers.telegram.location_handler import location_command
 
 with open('configs/telegram.json', 'r') as config_file:
     config = json.load(config_file)
@@ -24,6 +25,7 @@ if __name__ == '__main__':
 
     # Command
     app.add_handler(CommandHandler('start', start_command))
+    app.add_handler(MessageHandler(filters.LOCATION, location_command))
     app.add_handler(CallbackQueryHandler(button))
 
     print('Polling...')

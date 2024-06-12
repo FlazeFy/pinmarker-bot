@@ -3,6 +3,7 @@ from services.modules.visit.visit_model import visit
 from configs.configs import con
 from sqlalchemy import select, and_
 from sqlalchemy.sql.functions import concat
+from helpers.converter import calculate_distance
 
 async def get_all_pin():
     # Query builder
@@ -125,3 +126,65 @@ async def get_detail_pin(id):
         res += '<i>- This location has never been visited -</i>'
 
     return res, data_pin.pin_lat, data_pin.pin_long
+
+async def get_pin_distance_by_coor(coor:str):
+    # Query builder
+    query = select(
+        pin.c.pin_name,
+        pin.c.pin_lat,
+        pin.c.pin_long,
+        pin.c.pin_person,
+        pin.c.pin_call,
+        pin.c.pin_email,
+        pin.c.pin_address
+    ).where(
+        pin.c.created_by == "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+    )
+
+    # Exec
+    result = con.execute(query)
+    data = result.fetchall()
+    res = ''
+
+    if data:
+        pin_data = []
+        
+        for dt in data:
+            distance = calculate_distance(coor, f"{dt.pin_lat},{dt.pin_long}")
+            pin_data.append({
+                'pin_name': dt.pin_name,
+                'pin_lat': dt.pin_lat,
+                'pin_long': dt.pin_long,
+                'pin_person': dt.pin_person,
+                'pin_call': dt.pin_call,
+                'pin_email': dt.pin_email,
+                'pin_address': dt.pin_address,
+                'distance': distance
+            })
+
+        # Order by distance
+        pin_data.sort(key=lambda x: x['distance'])
+
+        res += f"<b>Showing pin by closest distance :</b>\n\n"
+        for dt in pin_data:
+            distance = dt['distance']
+            if distance > 1000:
+                distance = distance / 1000
+                distance = f"{distance:.2f} km"
+            else:
+                distance = f"{distance:.2f} m"
+
+            res += (
+                f"<b>{dt['pin_name']}</b>\n"
+                f"Distance from Me: <b>{distance}</b>\n\n"
+                f"<b>Contact</b>\n"
+                f"Person in Touch : {dt['pin_person'] or '-'}\n"
+                f"Phone Number : {dt['pin_call'] or '-'}\n"
+                f"Email : {dt['pin_email'] or '-'}\n"
+                f"Address : {dt['pin_address'] or '-'}\n\n"
+                f"========== || ========== || ==========\n\n"
+            )
+    else:
+        res += '<i>- You have no location saved -</i>'
+
+    return res

@@ -76,7 +76,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = main_menu_keyboard()
-    await update.message.reply_text('What do you want:', reply_markup=reply_markup)
+    await update.message.reply_text('What do you want:\nOr send my your location to show your pin distance :', reply_markup=reply_markup)
 
 def main_menu_keyboard():
     keyboard = [
