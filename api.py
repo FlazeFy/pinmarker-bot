@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from services.modules.track.router import router_track
+from services.modules.stats.router import router_stats
+from services.modules.pin.router import router_pin
 from fastapi.middleware.cors import CORSMiddleware
 
 from configs.configs import cred
@@ -31,6 +33,8 @@ app.add_middleware(
 
 # Router
 app.include_router(router_track)
+app.include_router(router_stats)
+app.include_router(router_pin)
 
 @app.get("/")
 async def root():

@@ -61,7 +61,7 @@ async def get_stats():
 
     return res
 
-async def get_dashboard():
+async def get_dashboard(type:str):
     userId = "fcd3f23e-e5aa-11ee-892a-3216422910e9"
 
     # Query builder
@@ -141,13 +141,25 @@ async def get_dashboard():
     result_last_added = con.execute(query_last_added)
     data_last_added = result_last_added.first()
     
-    res = (
-        f"<b>Total Marker: {data_total_marker.total}</b>\n"
-        f"<b>Total Favorite : {data_total_favorite.total}</b>\n"
-        f"<b>Last Visit : {data_last_visit.pin_name}</b>\n"
-        f"<b>Most Visit : ({data_most_visit.total}) {data_most_visit.context}</b>\n"
-        f"<b>Most Category : ({data_most_category.total}) {data_most_category.context}</b>\n"
-        f"<b>Last Added : {data_last_added.pin_name}</b>\n"
-    )
-
-    return res
+    if type == 'bot':
+        res = (
+            f"<b>Total Marker: {data_total_marker.total}</b>\n"
+            f"<b>Total Favorite : {data_total_favorite.total}</b>\n"
+            f"<b>Last Visit : {data_last_visit.pin_name}</b>\n"
+            f"<b>Most Visit : ({data_most_visit.total}) {data_most_visit.context}</b>\n"
+            f"<b>Most Category : ({data_most_category.total}) {data_most_category.context}</b>\n"
+            f"<b>Last Added : {data_last_added.pin_name}</b>\n"
+        )
+        return res
+    elif type == 'api':
+        return {
+            "data": {
+                'total_marker' : data_total_marker.total,
+                'total_favorite' : data_total_favorite.total,
+                'last_visit' : data_last_visit.pin_name, 
+                'most_visit' : f"({data_most_visit.total}) {data_most_visit.context}",
+                'most_category' : f"({data_most_category.total}) {data_most_category.context}",
+                'last_added' : data_last_added.pin_name
+            },
+            "message": "Dashboard found",
+        }

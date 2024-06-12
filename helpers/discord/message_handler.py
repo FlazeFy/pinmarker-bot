@@ -18,7 +18,7 @@ async def on_message_handler(bot, message):
         server_name = message.guild.name if message.guild else 'Unknown Server'
         await message.channel.send(f'Pong from {server_name}!')
     elif message.content == '1':
-        res = await get_all_pin()
+        res = await get_all_pin(type='bot')
         await send_long_message(message.channel, f"Showing location...\n\n{convert_html_to_discord_chat(res)}")
     elif message.content == '3':
         res = await get_all_visit()
@@ -27,7 +27,7 @@ async def on_message_handler(bot, message):
         file, file_name = await get_all_visit_csv(platform='discord')
         await message.channel.send("Generate CSV file of history...\n\n", file=File(file, filename=file_name))
     elif message.content == '4':
-        res = await get_dashboard()
+        res = await get_dashboard(type='bot')
         await message.channel.send(f"Showing dashboard...\n\n{convert_html_to_discord_chat(res)}")
     elif message.content == '5':
         res = await get_stats()

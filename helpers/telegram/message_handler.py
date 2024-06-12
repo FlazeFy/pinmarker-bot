@@ -17,7 +17,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Handle different button presses here
     if query.data == '1':
-        res = await get_all_pin()
+        res = await get_all_pin(type='bot')
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing location...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
@@ -51,7 +51,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.reply_document(document=file, caption="Generate CSV file of history...\n\n", reply_markup=reply_markup)
     elif query.data == '4':
-        res = await get_dashboard()
+        res = await get_dashboard(type='bot')
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing dashboard...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')

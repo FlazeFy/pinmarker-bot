@@ -5,7 +5,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.sql.functions import concat
 from helpers.converter import calculate_distance
 
-async def get_all_pin():
+async def get_all_pin(type:str):
     # Query builder
     query = select(
         pin.c.pin_name,
@@ -28,21 +28,29 @@ async def get_all_pin():
     pin_category_before = ''
     i = 1
 
-    for dt in data:
-        if pin_category_before == '' or pin_category_before != dt.pin_category:
-            res += f"<b>Category: {dt.pin_category}</b>\n\n"
-            pin_category_before = dt.pin_category
-            i = 1
-        
-        res += (
-            f"<b>{i}. {dt.pin_name}</b>\n"
-            f"Notes : {dt.pin_desc or '<i>- No Description Provided -</i>'}\n"
-            f"Person In Contact : {dt.pin_person or '-'}\n"
-            f"https://www.google.com/maps/place/{dt.pin_coordinate}\n\n"
-        )
-        i += 1
+    if type == 'bot':
+        for dt in data:
+            if pin_category_before == '' or pin_category_before != dt.pin_category:
+                res += f"<b>Category: {dt.pin_category}</b>\n\n"
+                pin_category_before = dt.pin_category
+                i = 1
+            
+            res += (
+                f"<b>{i}. {dt.pin_name}</b>\n"
+                f"Notes : {dt.pin_desc or '<i>- No Description Provided -</i>'}\n"
+                f"Person In Contact : {dt.pin_person or '-'}\n"
+                f"https://www.google.com/maps/place/{dt.pin_coordinate}\n\n"
+            )
+            i += 1
 
-    return res
+        return res
+    elif type == 'api':
+        data_list = [dict(row._mapping) for row in data]  # Use _mapping to convert Row object to dict
+        return {
+            "data": data_list,
+            "message": "Pin found",
+            "count": len(data)
+        }
 
 async def get_all_pin_name():
     # Query builder
