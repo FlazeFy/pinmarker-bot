@@ -196,3 +196,44 @@ async def get_pin_distance_by_coor(coor:str):
         res += '<i>- You have no location saved -</i>'
 
     return res
+
+# External Apps
+async def get_pin_by_category_query(category:str,user_id:str):
+    list_category = category.split(',')
+
+    # Query builder
+    query = select(
+        pin.c.pin_name,
+        pin.c.pin_desc,
+        pin.c.pin_lat,
+        pin.c.pin_long,
+        pin.c.pin_person,
+        pin.c.pin_address,
+        pin.c.pin_call,
+        pin.c.pin_email
+    ).where(
+        and_(
+            pin.c.created_by == user_id,
+            pin.c.pin_category.in_(list_category)
+        )
+    ).order_by(
+        pin.c.pin_name.asc()
+    )
+
+    # Exec
+    result = con.execute(query)
+    data = result.fetchall()
+
+    data_list = [dict(row._mapping) for row in data]
+
+    if len(data) > 0:
+        return {
+            "data": data_list,
+            "message": "Pin found",
+            "count": len(data)
+        }
+    else:
+        return {
+            "data": None,
+            "message": "Pin not found",
+        }

@@ -53,9 +53,10 @@ async def get_activity_around_coordinate(coor: str, id: str):
 class TrackPeriodRequest(BaseModel):
     start_time: datetime
     end_time: datetime
-@router_track.get("/api/v1/track/journey/period/{id}", response_model=dict)
+@router_track.post("/api/v1/track/journey/period/{id}", response_model=dict)
 async def get_track_journey(id: str, request: TrackPeriodRequest):
     try:
+        print(request)
         return await get_tracks_period(userId=id, start_time=request.start_time, end_time=request.end_time)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
