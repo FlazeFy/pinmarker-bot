@@ -1,5 +1,6 @@
 /venv
 /configs/telegram.json
+/configs/email.json
 reports/csv/report-activity.csv
 *DS_Store
 configs/discord.json
