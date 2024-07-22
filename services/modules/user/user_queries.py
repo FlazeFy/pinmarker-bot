@@ -1,7 +1,6 @@
 from services.modules.user.user_model import user
 from configs.configs import con
 from sqlalchemy import select
-from sqlalchemy.sql.functions import concat
 
 async def get_check_context_query(type:str, context:str):
     if type == "email":

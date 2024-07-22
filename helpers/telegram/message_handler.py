@@ -6,7 +6,9 @@ import io
 from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
 from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
 from services.modules.stats.stats_queries import get_dashboard, get_stats
+from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.track.track_queries import get_last_tracker_position
+from helpers.telegram.typography import send_long_message
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -18,10 +20,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Handle different button presses here
     if query.data == '1':
         res = await get_all_pin(type='bot')
+        message_chunks = send_long_message(res)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing location...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
-    elif query.data == '2':
+        await query.edit_message_text(text="Showing location...", reply_markup=reply_markup, parse_mode='HTML')
+        for chunk in message_chunks:
+            await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
         res = await get_all_pin_name()
         keyboard = []
         for dt in res:
@@ -57,6 +61,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text=f"Showing dashboard...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
     elif query.data == '5':
         res = await get_stats()
+        res_capture = await get_stats_capture()
+        if res_capture:
+            with open(res_capture, 'rb') as photo:
+                await context.bot.send_photo(chat_id=query.message.chat_id, photo=photo)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing stats...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
