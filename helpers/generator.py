@@ -1,5 +1,11 @@
 import random
 import binascii
+import googlemaps
+import json
+from typing import Final
+with open('configs/google.json', 'r') as config_file:
+    config = json.load(config_file)
+MAPS_API_KEY: Final = config['MAPS_API_KEY']
 
 def get_UUID():
     random_bytes = random.randbytes(16)
@@ -26,3 +32,12 @@ def get_token_validation(length: int) -> str:
         res += characters[rand_index]
     
     return res
+
+def get_city_from_coordinate(latitude, longitude):
+    gmaps = googlemaps.Client(key=MAPS_API_KEY)
+    reverse_geocode_result = gmaps.reverse_geocode((latitude, longitude))
+    for result in reverse_geocode_result:
+        for component in result['address_components']:
+            if 'locality' in component['types']:
+                return component['long_name']
+    return None

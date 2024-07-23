@@ -48,6 +48,40 @@ async def get_all_pin(type:str):
             "message": "Pin found",
             "count": len(data)
         }
+    
+async def get_pin_by_name(name:str):
+    # Query builder
+    query = select(
+        pin.c.pin_name,
+        pin.c.pin_lat,
+        pin.c.pin_long,
+        pin.c.pin_category
+    ).where(
+        and_(
+            pin.c.created_by == "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+            pin.c.pin_name.ilike(f'%{name}%'),
+        )
+    ).order_by(
+        pin.c.pin_name.asc()
+    )
+
+    # Exec
+    result = con.execute(query)
+    data = result.fetchall()
+
+    data_list = [dict(row._mapping) for row in data]
+
+    if len(data) > 0:
+        return {
+            "data": data_list,
+            "message": "Pin found",
+            "count": len(data)
+        }
+    else:
+        return {
+            "data": None,
+            "message": "Pin not found",
+        }
 
 async def get_all_pin_name():
     # Query builder

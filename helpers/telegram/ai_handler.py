@@ -4,12 +4,13 @@ from telegram import Update
 from telegram.ext import CallbackContext
 nltk.download('punkt')
 from helpers.telegram.typography import send_long_message
+from helpers.generator import get_city_from_coordinate
 import os
 import io
 import random
 
 # Services
-from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query
+from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query, get_pin_by_name
 from services.modules.stats.stats_queries import get_stats, get_dashboard
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
@@ -23,11 +24,13 @@ async def handle_ai(update: Update, context: CallbackContext):
     # Receive order
     greetings = ['hello','hai']
     whos = ['who','who are you']
+    thanks = ['thank','thanks','thx','thank you','thanks a lot']
     self_command = ['my']
     location_command = ['marker','pin']
     stats_command = ['stats','statistic','chart','summary']
     history_command = ['history','activity','visit']
-    where_command = ['where']
+    where_command = ['where','locate','find']
+    where_command_region = ['city','town','village','region']
     topic_self_command = ["i'm","im"]
 
     # Topic order
@@ -44,6 +47,9 @@ async def handle_ai(update: Update, context: CallbackContext):
     elif any(dt in tokens for dt in whos):
         res = "Hello I'm PinMarker Bot"
         await update.message.reply_text(res)
+    elif any(dt in tokens for dt in thanks):
+        res = ['Your welcome','At my pleasure']
+        await update.message.reply_text(random.choice(res))
     elif any(dt in tokens for dt in self_command):
 
         # Personal data
@@ -119,10 +125,25 @@ async def handle_ai(update: Update, context: CallbackContext):
                 res += 'No data found'
             await update.message.reply_text(f"{random.choice(topic_respond)}:\n\n{res}", parse_mode='HTML')
 
+    # Find marker
     elif any(dt in tokens for dt in where_command):
-        search_tokens = [token for token in tokens if token not in where_command]
+        search_tokens = [token for token in tokens if token not in where_command + where_command_region]
         search = ' '.join(search_tokens)
-        res = await get_find_all(search=search,type='ai')
+        if any(dt in tokens for dt in where_command_region):
+            data = await get_pin_by_name(name=search)
+            res = ''
+            if data['data']:
+                res = f"{random.choice(present_respond)} marker...\n\n"
+                for idx, dt in enumerate(data['data'], 1):
+                    res += (
+                        f"<b>{idx}. {dt['pin_name']} at {get_city_from_coordinate(dt['pin_lat'],dt['pin_long'])}</b>\n"
+                        f"https://www.google.com/maps/place/{dt['pin_lat']},{dt['pin_long']}\n\n"
+                    )
+            else:
+                res += 'No data found'
+        else:
+            res = await get_find_all(search=search, type='ai')
+
         message_chunks = send_long_message(res)
         for chunk in message_chunks:
             await update.message.reply_text(chunk, parse_mode='HTML')
