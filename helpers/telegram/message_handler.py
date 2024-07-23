@@ -1,6 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 import io
+import os
 
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_all_pin_name, get_detail_pin
@@ -65,6 +66,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if res_capture:
             with open(res_capture, 'rb') as photo:
                 await context.bot.send_photo(chat_id=query.message.chat_id, photo=photo)
+            os.remove(res_capture)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing stats...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
