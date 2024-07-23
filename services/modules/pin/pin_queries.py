@@ -26,26 +26,23 @@ async def get_all_pin(type:str):
 
     res = f"You have {len(data)} pins.\nHere is the list:\n"
     pin_category_before = ''
-    i = 1
 
     if type == 'bot':
-        for dt in data:
+        for idx, dt in enumerate(data, start=1):
             if pin_category_before == '' or pin_category_before != dt.pin_category:
                 res += f"<b>Category: {dt.pin_category}</b>\n\n"
                 pin_category_before = dt.pin_category
-                i = 1
             
             res += (
-                f"<b>{i}. {dt.pin_name}</b>\n"
+                f"<b>{idx}. {dt.pin_name}</b>\n"
                 f"Notes : {dt.pin_desc or '<i>- No Description Provided -</i>'}\n"
                 f"Person In Contact : {dt.pin_person or '-'}\n"
                 f"https://www.google.com/maps/place/{dt.pin_coordinate}\n\n"
             )
-            i += 1
 
         return res
     elif type == 'api':
-        data_list = [dict(row._mapping) for row in data]  # Use _mapping to convert Row object to dict
+        data_list = [dict(row._mapping) for row in data]
         return {
             "data": data_list,
             "message": "Pin found",
@@ -194,6 +191,62 @@ async def get_pin_distance_by_coor(coor:str):
             )
     else:
         res += '<i>- You have no location saved -</i>'
+
+    return res
+
+async def get_find_all(search:str, type:str):
+    res = ''
+
+    if type == 'ai':
+        # Query builder
+        query_cat = select(
+            pin.c.pin_name,
+            concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate')
+        ).where(
+            and_(
+                pin.c.created_by == "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                pin.c.pin_category == search
+            )
+        )
+
+        query_pin = select(
+            pin.c.pin_name,
+            concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate')
+        ).where(
+            and_(
+                pin.c.created_by == "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                pin.c.pin_name.ilike(f'%{search}%')
+            )
+        )
+
+        # Exec
+        result_cat = con.execute(query_cat)
+        result_pin = con.execute(query_pin)
+        data_cat = result_cat.fetchall()
+        data_pin = result_pin.fetchall()
+
+        if data_cat or data_pin:
+            if data_cat:
+                res += f'Based on category <b>{search}</b>, I found {len(data_cat)} marker:\n\n'
+                for idx, dt in enumerate(data_cat, start=1):            
+                    res += (
+                        f"<b>{idx}. {dt.pin_name}</b>\n"
+                        f"https://www.google.com/maps/place/{dt.pin_coordinate}\n\n"
+                    )
+            else:
+                res += "I don't find any category\n\n"
+            
+            if data_pin:
+                res += f'Based on pin name <b>{search}</b>, I found {len(data_pin)} marker:\n\n'
+                for idx, dt in enumerate(data_pin, start=1):            
+                    res += (
+                        f"<b>{idx}. {dt.pin_name}</b>\n"
+                        f"https://www.google.com/maps/place/{dt.pin_coordinate}\n\n"
+                    )
+            else:
+                res += "I don't find any pin"
+        else:
+            res += f'No data found for both category and pin name based on {search}\n'
 
     return res
 
