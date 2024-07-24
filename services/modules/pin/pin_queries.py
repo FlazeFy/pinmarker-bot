@@ -253,11 +253,26 @@ async def get_find_all(search:str, type:str):
             )
         )
 
+        query_person = select(
+            pin.c.pin_name,
+            pin.c.pin_person,
+            concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate')
+        ).where(
+            and_(
+                pin.c.created_by == "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                pin.c.pin_person.ilike(f'%{search}%')
+            )
+        ).order_by(
+            pin.c.pin_name.asc()
+        )
+
         # Exec
         result_cat = con.execute(query_cat)
         result_pin = con.execute(query_pin)
+        result_person = con.execute(query_person)
         data_cat = result_cat.fetchall()
         data_pin = result_pin.fetchall()
+        data_person = result_person.fetchall()
 
         if data_cat or data_pin:
             if data_cat:
@@ -279,6 +294,16 @@ async def get_find_all(search:str, type:str):
                     )
             else:
                 res += "I don't find any pin"
+
+            if data_person:
+                res += f'Based on person in touch <b>{search}</b>, I found {len(data_pin)} marker:\n\n'
+                for idx, dt in enumerate(data_person, start=1):            
+                    res += (
+                        f"<b>{idx}. {dt.pin_name} - {dt.pin_person}</b>\n"
+                        f"https://www.google.com/maps/place/{dt.pin_coordinate}\n\n"
+                    )
+            else:
+                res += "I don't find any person"
         else:
             res += f'No data found for both category and pin name based on {search}\n'
 

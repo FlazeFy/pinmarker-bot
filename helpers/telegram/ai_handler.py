@@ -3,8 +3,11 @@ from nltk.tokenize import word_tokenize
 from telegram import Update
 from telegram.ext import CallbackContext
 nltk.download('punkt')
+
+# Helper
 from helpers.telegram.typography import send_long_message
 from helpers.generator import get_city_from_coordinate
+
 import os
 import io
 import random
@@ -29,7 +32,7 @@ async def handle_ai(update: Update, context: CallbackContext):
     location_command = ['marker','pin']
     stats_command = ['stats','statistic','chart','summary']
     history_command = ['history','activity','visit']
-    where_command = ['where','locate','find']
+    where_command = ['where','locate','find','search']
     where_command_region = ['city','town','village','region']
     topic_self_command = ["i'm","im"]
 
