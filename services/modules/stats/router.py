@@ -51,7 +51,7 @@ async def get_total_visit_by_category(id: str):
 @router_stats.get("/api/v1/stats/total_gallery_by_pin/{id}", response_model=dict)
 async def get_total_gallery_by_pin(id: str):
     try:
-        data = await get_total_item_by_context(tableName="gallery", join="pin on pin.id = gallery.pin_id", targetColumn="pin_name")
+        data = await get_total_item_by_context(tableName="gallery", join="pin on pin.id = gallery.pin_id", targetColumn="pin_name", userId=id)
         if len(data) != 0:
             data_list = [dict(row._mapping) for row in data]
             return {

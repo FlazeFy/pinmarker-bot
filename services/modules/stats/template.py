@@ -1,9 +1,7 @@
 from configs.configs import con
 from sqlalchemy import text
 
-async def get_total_item_by_context(tableName, targetColumn, join):
-    userId = "fcd3f23e-e5aa-11ee-892a-3216422910e9"
-
+async def get_total_item_by_context(tableName, targetColumn, join, userId):
     # Query builder
     sql_query = f"""
         SELECT {targetColumn} AS context, COUNT(1) AS total 
