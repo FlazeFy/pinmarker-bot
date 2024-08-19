@@ -5,7 +5,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.sql.functions import concat
 from helpers.converter import calculate_distance
 
-async def get_all_pin(type:str, id:str):
+async def get_all_pin(type:str, userId:str):
     # Query builder
     query = select(
         pin.c.pin_name,
@@ -14,7 +14,7 @@ async def get_all_pin(type:str, id:str):
         pin.c.pin_category,
         pin.c.pin_person
     ).where(
-        pin.c.created_by == id,
+        pin.c.created_by == userId,
     ).order_by(
         pin.c.pin_category.asc(),
         pin.c.pin_name.asc()

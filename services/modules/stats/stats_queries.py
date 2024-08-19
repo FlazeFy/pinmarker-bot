@@ -7,7 +7,7 @@ from services.modules.pin.pin_model import pin
 from services.modules.visit.visit_model import visit
 from services.modules.stats.template import get_total_item_by_context
 
-async def get_stats():
+async def get_stats(userId:str):
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     userId = "fcd3f23e-e5aa-11ee-892a-3216422910e9"
 
@@ -61,9 +61,7 @@ async def get_stats():
 
     return res
 
-async def get_dashboard(type:str):
-    userId = "fcd3f23e-e5aa-11ee-892a-3216422910e9"
-
+async def get_dashboard(type:str, userId:str):
     # Query builder
     sql_total_marker = f"""
         SELECT COUNT(1) AS total

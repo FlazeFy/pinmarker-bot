@@ -1,6 +1,6 @@
 from services.modules.user.user_model import user
 from configs.configs import con
-from sqlalchemy import select
+from sqlalchemy import select, and_
 
 async def get_check_context_query(type:str, context:str):
     if type == "email":
@@ -51,7 +51,10 @@ async def get_profile_by_telegram_id(teleId:str):
         user.c.username,
         user.c.email,
     ).where(
-        user.c.telegram_user_id == teleId
+        and_(
+            user.c.telegram_user_id == teleId,
+            user.c.telegram_is_valid == 1
+        )
     )
 
     # Exec

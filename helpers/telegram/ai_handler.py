@@ -61,13 +61,13 @@ async def handle_ai(update: Update, context: CallbackContext):
 
         # Personal data
         if any(dt in tokens for dt in location_command):
-            res = await get_all_pin(type='bot')
+            res = await get_all_pin(type='bot', userId=userId)
             message_chunks = send_long_message(res)
             await update.message.reply_text(f"{random.choice(present_respond)} location...")
             for chunk in message_chunks:
                 await update.message.reply_text(chunk, parse_mode='HTML')
         elif any(dt in tokens for dt in stats_command):
-            res = await get_stats()
+            res = await get_stats(userId=userId)
             res_capture = await get_stats_capture()
             if res_capture:
                 with open(res_capture, 'rb') as photo:
@@ -75,7 +75,7 @@ async def handle_ai(update: Update, context: CallbackContext):
                     os.remove(res_capture)
             await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
         elif 'dashboard' in tokens:
-            res = await get_dashboard(type='bot')
+            res = await get_dashboard(type='bot', userId=userId)
             await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
         
         # Visit history
@@ -94,7 +94,7 @@ async def handle_ai(update: Update, context: CallbackContext):
 
         # Cafe, Restaurant
         if any(dt in tokens for dt in topic_food_command):
-            data = await get_pin_by_category_query("cafe,restaurant","fcd3f23e-e5aa-11ee-892a-3216422910e9")
+            data = await get_pin_by_category_query(category="cafe,restaurant",user_id=userId)
             topic_respond.extend(['You can enjoy some food or drink at','Try to get food at'])
             if data['data']:
                 for idx, dt in enumerate(data['data'], 1):
@@ -108,7 +108,7 @@ async def handle_ai(update: Update, context: CallbackContext):
 
         # Family, Friend
         elif any(dt in tokens for dt in topic_social_command):
-            data = await get_pin_by_category_query("family,friend","fcd3f23e-e5aa-11ee-892a-3216422910e9")
+            data = await get_pin_by_category_query(category="family,friend",user_id=userId)
             topic_respond.extend(['I think you need to talk to these people','Remember you are not alone','Go have fun with'])
             if data['data']:
                 for idx, dt in enumerate(data['data'], 1):
@@ -122,7 +122,7 @@ async def handle_ai(update: Update, context: CallbackContext):
 
         # Personal
         elif any(dt in tokens for dt in topic_personal_command):
-            data = await get_pin_by_category_query("personal","fcd3f23e-e5aa-11ee-892a-3216422910e9")
+            data = await get_pin_by_category_query(category="personal",user_id=userId)
             topic_respond.extend(['You need your bed right now'])
             if data['data']:
                 for idx, dt in enumerate(data['data'], 1):
