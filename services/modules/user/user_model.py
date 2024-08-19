@@ -7,4 +7,5 @@ user=Table(
     Column('id',String(36),primary_key=True),
     Column('username',String(36)),
     Column('email',String(255)),
+    Column('telegram_user_id',String(36)),
 )

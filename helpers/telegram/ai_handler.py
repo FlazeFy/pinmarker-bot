@@ -17,10 +17,14 @@ from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_
 from services.modules.stats.stats_queries import get_stats, get_dashboard
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
+from services.modules.user.user_queries import get_profile_by_telegram_id
 
 async def handle_ai(update: Update, context: CallbackContext):
     user_message = update.message.text.lower()
     tokens = word_tokenize(user_message)
+    userTeleId = update.effective_user.id
+    profile = await get_profile_by_telegram_id(teleId=userTeleId)
+    userId = profile['data'].id
 
     res = "Sorry i dont understand your message"
 
@@ -73,9 +77,11 @@ async def handle_ai(update: Update, context: CallbackContext):
         elif 'dashboard' in tokens:
             res = await get_dashboard(type='bot')
             await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
+        
+        # Visit history
         elif any(dt in  tokens for dt in history_command):
-            res = await get_all_visit()
-            csv_content, file_name = await get_all_visit_csv(platform='telegram')
+            res = await get_all_visit(userId=userId)
+            csv_content, file_name = await get_all_visit_csv(platform='telegram',userId=userId)
             file = io.BytesIO(csv_content.encode('utf-8'))
             file.name = file_name     
             await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')

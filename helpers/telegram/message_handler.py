@@ -9,6 +9,7 @@ from services.modules.visit.visit_queries import get_all_visit, get_all_visit_cs
 from services.modules.stats.stats_queries import get_dashboard, get_stats
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.track.track_queries import get_last_tracker_position
+from services.modules.user.user_queries import get_profile_by_telegram_id
 from helpers.telegram.typography import send_long_message
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -16,6 +17,9 @@ async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    userTeleId = query.from_user.id
+    profile = await get_profile_by_telegram_id(teleId=userTeleId)
+    userId = profile['data'].id
     await query.answer()
 
     # Handle different button presses here
@@ -35,6 +39,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard.append([InlineKeyboardButton("Back", callback_data='back')])
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Showing location...", reply_markup=reply_markup)
+
     elif query.data.startswith('detail_pin_'):
         pin_id = query.data.split('_')[2]
         res, pin_lat, pin_long = await get_detail_pin(pin_id)
@@ -43,13 +48,18 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(text=f"Pin opened...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
+
     elif query.data == '3':
-        res = await get_all_visit()
+        res = await get_all_visit(userId=userId)
+        message_chunks = send_long_message(res)
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        await query.edit_message_text(text=f"Showing history...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
+        for chunk in message_chunks:
+            await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
+        await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
+
     elif query.data == '3/csv':
-        csv_content, file_name = await get_all_visit_csv(platform='telegram')
+        csv_content, file_name = await get_all_visit_csv(platform='telegram', userId=userId)
         file = io.BytesIO(csv_content.encode('utf-8'))
         file.name = file_name        
         keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -86,7 +96,16 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = main_menu_keyboard()
-    await update.message.reply_text('What do you want:\nOr send my your location to show your pin distance :', reply_markup=reply_markup)
+    userId = update.message.from_user.id
+    profile = await get_profile_by_telegram_id(teleId=userId)
+    if profile["is_found"]:
+        username = profile["data"].username
+        await update.message.reply_text(
+            f"Hello @{username}, What do you want:\nOr send me your location to show your pin distance:",
+            reply_markup=reply_markup
+        )
+    else:
+        await update.message.reply_text(profile["message"])
 
 def main_menu_keyboard():
     keyboard = [
