@@ -1,4 +1,5 @@
 from services.modules.user.user_model import user
+from services.modules.user.admin_model import admin
 from configs.configs import con
 from sqlalchemy import select, and_
 
@@ -45,7 +46,7 @@ async def get_check_context_query(type:str, context:str):
         }
     
 async def get_profile_by_telegram_id(teleId:str):
-    # Query builder
+    # Query builder - User
     query = select(
         user.c.id,
         user.c.username,
@@ -57,21 +58,47 @@ async def get_profile_by_telegram_id(teleId:str):
         )
     )
 
-    # Exec
+    # Exec - User
     result = con.execute(query)
-    data = result.first()
+    user_data = result.first()
 
-    if data:
+    if user_data:
         return {
             "is_found": True,
-            "data": data,
+            "role":"user",
+            "data": user_data,
             "message":"User found"
         }
     else:
-        return {
-            "is_found": False,
-            "data": None,
-            "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
-        }
+        # Query builder - Admin
+        query = select(
+            admin.c.id,
+            admin.c.username,
+            admin.c.email,
+        ).where(
+            and_(
+                admin.c.telegram_user_id == teleId,
+                admin.c.telegram_is_valid == 1
+            )
+        )
+
+        # Exec - Admin
+        result = con.execute(query)
+        admin_data = result.first()
+        
+        if admin_data:
+            return {
+                "is_found": True,
+                "role":"admin",
+                "data": admin_data,
+                "message":"Admin found"
+            }
+        else: 
+            return {
+                "is_found": False,
+                "role": None,
+                "data": None,
+                "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
+            }
        
         

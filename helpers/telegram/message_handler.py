@@ -5,7 +5,7 @@ import os
 
 # Services
 from services.modules.pin.pin_queries import get_all_pin
-from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
+from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
 from services.modules.stats.stats_queries import get_dashboard, get_stats
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.track.track_queries import get_last_tracker_position
@@ -23,6 +23,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if profile["is_found"]:
         userId = profile['data'].id
+        role = profile['role']
         await query.answer()
 
         if query.data == '1':
@@ -37,7 +38,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # if query.data == '2':
 
         elif query.data == '3':
-            res = await get_all_visit(userId=userId)
+            res = await get_all_visit_last_day(userId=userId)
             message_chunks = send_long_message(res)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -47,17 +48,21 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif query.data == '3/csv':
             csv_content, file_name = await get_all_visit_csv(platform='telegram', userId=userId)
-            file = io.BytesIO(csv_content.encode('utf-8'))
-            file.name = file_name        
-            keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.message.reply_document(document=file, caption="Generate CSV file of history...\n\n", reply_markup=reply_markup)
+            if csv_content and file_name:
+                file = io.BytesIO(csv_content.encode('utf-8'))
+                file.name = file_name        
+                keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+                reply_markup = InlineKeyboardMarkup(keyboard)
+                await query.message.reply_document(document=file, caption="Generate CSV file of history...\n\n", reply_markup=reply_markup)
+            else:
+                await query.edit_message_text(text=f"<i>- {file_name} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')
 
         elif query.data == '4':
-            res = await get_dashboard(type='bot', userId=userId)
+            res = await get_dashboard(type='bot', userId=userId, role=role)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.edit_message_text(text=f"Showing dashboard...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
+            await query.edit_message_text(text=f"Showing dashboard...\n\n", reply_markup=reply_markup, parse_mode='HTML')
+            await query.edit_message_text(text=res, reply_markup=reply_markup, parse_mode='HTML')
 
         elif query.data == '5':
             res = await get_stats(userId=userId)
@@ -94,7 +99,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif query.data == 'sign_out_yes':
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            res = await update_sign_out(userId=userId, teleId=userTeleId)
+            res = await update_sign_out(userId=userId, teleId=userTeleId, role=role)
             await query.edit_message_text(res["message"], reply_markup=reply_markup)
 
         elif query.data == 'back' or query.data == 'sign_out_no':

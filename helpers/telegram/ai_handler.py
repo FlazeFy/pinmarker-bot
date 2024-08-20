@@ -16,7 +16,7 @@ import random
 from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query, get_pin_by_name
 from services.modules.stats.stats_queries import get_stats, get_dashboard
 from services.modules.stats.stats_capture import get_stats_capture
-from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
+from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
 from services.modules.user.user_queries import get_profile_by_telegram_id
 
 async def handle_ai(update: Update, context: CallbackContext):
@@ -80,7 +80,7 @@ async def handle_ai(update: Update, context: CallbackContext):
         
         # Visit history
         elif any(dt in  tokens for dt in history_command):
-            res = await get_all_visit(userId=userId)
+            res = await get_all_visit_last_day(userId=userId)
             csv_content, file_name = await get_all_visit_csv(platform='telegram',userId=userId)
             file = io.BytesIO(csv_content.encode('utf-8'))
             file.name = file_name     

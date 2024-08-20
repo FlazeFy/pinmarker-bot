@@ -61,7 +61,7 @@ async def get_stats(userId:str):
 
     return res
 
-async def get_dashboard(type:str, userId:str):
+async def get_dashboard(type:str, userId:str, role:str):
     # Query builder
     sql_total_marker = f"""
         SELECT COUNT(1) AS total
@@ -127,37 +127,47 @@ async def get_dashboard(type:str, userId:str):
     result_total_favorite = con.execute(compiled_sql_total_favorite)
     data_total_favorite = result_total_favorite.first()
 
-    result_most_visit = con.execute(compiled_sql_most_visit)
-    data_most_visit = result_most_visit.first()
-
     result_most_category = con.execute(compiled_sql_most_category)
     data_most_category = result_most_category.first()
 
-    result_last_visit = con.execute(query_last_visit)
-    data_last_visit = result_last_visit.first()
-
     result_last_added = con.execute(query_last_added)
     data_last_added = result_last_added.first()
+
+    if role == 'user':
+        result_most_visit = con.execute(compiled_sql_most_visit)
+        data_most_visit = result_most_visit.first()
+
+        result_last_visit = con.execute(query_last_visit)
+        data_last_visit = result_last_visit.first()
     
     if type == 'bot':
         res = (
             f"<b>Total Marker: {data_total_marker.total}</b>\n"
             f"<b>Total Favorite : {data_total_favorite.total}</b>\n"
-            f"<b>Last Visit : {data_last_visit.pin_name}</b>\n"
-            f"<b>Most Visit : ({data_most_visit.total}) {data_most_visit.context}</b>\n"
-            f"<b>Most Category : ({data_most_category.total}) {data_most_category.context}</b>\n"
-            f"<b>Last Added : {data_last_added.pin_name}</b>\n"
+            f"<b>Most Category : ({data_most_category.total if data_most_category else '-'}) {data_most_category.context if data_most_category else '-'}</b>\n"
+            f"<b>Last Added : {data_last_added.pin_name if data_last_added else '-'}</b>\n"
         )
+        if role == 'user':
+            res += (
+                f"<b>Last Visit : {data_last_visit.pin_name}</b>\n"
+                f"<b>Most Visit : ({data_most_visit.total}) {data_most_visit.context}</b>\n"
+            )
         return res
     elif type == 'api':
+        data = {
+            'total_marker': data_total_marker.total,
+            'total_favorite': data_total_favorite.total,
+            'most_category': f"({data_most_category.total if data_most_category else '-'}) {data_most_category.context if data_most_category else '-'}",
+            'last_added': data_last_added.pin_name if data_last_added else '-',
+        }
+        
+        if role == 'user':
+            data.update({
+                'last_visit': data_last_visit.pin_name,
+                'most_visit': f"({data_most_visit.total}) {data_most_visit.context}",
+            })
+
         return {
-            "data": {
-                'total_marker' : data_total_marker.total,
-                'total_favorite' : data_total_favorite.total,
-                'last_visit' : data_last_visit.pin_name, 
-                'most_visit' : f"({data_most_visit.total}) {data_most_visit.context}",
-                'most_category' : f"({data_most_category.total}) {data_most_category.context}",
-                'last_added' : data_last_added.pin_name
-            },
+            "data": data,
             "message": "Dashboard found",
         }
