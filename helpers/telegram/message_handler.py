@@ -38,7 +38,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # if query.data == '2':
 
         elif query.data == '3':
-            res = await get_all_visit_last_day(userId=userId)
+            res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
             message_chunks = send_long_message(res)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -47,7 +47,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
 
         elif query.data == '3/csv':
-            csv_content, file_name = await get_all_visit_csv(platform='telegram', userId=userId)
+            csv_content, file_name = await get_all_visit_csv(platform='telegram', userId=userId, teleId=userTeleId)
             if csv_content and file_name:
                 file = io.BytesIO(csv_content.encode('utf-8'))
                 file.name = file_name        

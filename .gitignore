@@ -6,3 +6,4 @@ reports/csv/report-activity.csv
 configs/discord.json
 configs/pinmarker-36552-firebase-adminsdk-5dett-b688b092f1.json
 configs/google.json
+user_data.db

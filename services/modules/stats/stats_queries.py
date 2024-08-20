@@ -149,8 +149,8 @@ async def get_dashboard(type:str, userId:str, role:str):
         )
         if role == 'user':
             res += (
-                f"<b>Last Visit : {data_last_visit.pin_name}</b>\n"
-                f"<b>Most Visit : ({data_most_visit.total}) {data_most_visit.context}</b>\n"
+                f"<b>Last Visit : {data_last_visit.pin_name if data_last_visit else '-'}</b>\n"
+                f"<b>Most Visit : ({data_most_visit.total if data_most_visit else '-'}) {data_most_visit.context if data_most_visit else '-'}</b>\n"
             )
         return res
     elif type == 'api':
@@ -163,8 +163,8 @@ async def get_dashboard(type:str, userId:str, role:str):
         
         if role == 'user':
             data.update({
-                'last_visit': data_last_visit.pin_name,
-                'most_visit': f"({data_most_visit.total}) {data_most_visit.context}",
+                'last_visit': data_last_visit.pin_name if data_last_visit else '-',
+                'most_visit': f"({data_most_visit.total if data_most_visit else '-'}) {data_most_visit.context if data_most_visit else '-'}",
             })
 
         return {

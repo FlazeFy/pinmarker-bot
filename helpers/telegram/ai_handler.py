@@ -80,12 +80,15 @@ async def handle_ai(update: Update, context: CallbackContext):
         
         # Visit history
         elif any(dt in  tokens for dt in history_command):
-            res = await get_all_visit_last_day(userId=userId)
-            csv_content, file_name = await get_all_visit_csv(platform='telegram',userId=userId)
-            file = io.BytesIO(csv_content.encode('utf-8'))
-            file.name = file_name     
-            await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
-            await update.message.reply_document(document=file, caption="Generate CSV file of history...\n\n")
+            res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
+            csv_content, file_name = await get_all_visit_csv(platform='telegram',userId=userId,teleId=userTeleId)
+            if csv_content and file_name:
+                file = io.BytesIO(csv_content.encode('utf-8'))
+                file.name = file_name     
+                await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
+                await update.message.reply_document(document=file, caption="Generate CSV file of history...\n\n")
+            else:
+                await update.message.reply_text(f"Export failed, {file_name}", parse_mode='HTML')
 
     # Topic data
     elif any(dt in tokens for dt in topic_self_command):

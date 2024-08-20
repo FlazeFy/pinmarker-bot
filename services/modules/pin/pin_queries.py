@@ -176,7 +176,7 @@ async def get_detail_pin(id):
 
     return res, data_pin.pin_lat, data_pin.pin_long
 
-async def get_pin_distance_by_coor(coor:str):
+async def get_pin_distance_by_coor(coor:str, userId:str):
     # Query builder
     query = select(
         pin.c.pin_name,
@@ -187,8 +187,8 @@ async def get_pin_distance_by_coor(coor:str):
         pin.c.pin_email,
         pin.c.pin_address
     ).where(
-        pin.c.created_by == "fcd3f23e-e5aa-11ee-892a-3216422910e9",
-    )
+        pin.c.created_by == userId,
+    ).limit(10)
 
     # Exec
     result = con.execute(query)

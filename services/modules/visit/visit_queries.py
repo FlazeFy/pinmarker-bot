@@ -7,10 +7,13 @@ import io
 from firebase_admin import storage
 from datetime import datetime, timedelta
 
+# Services
+from helpers.sqlite.template import get_user_timezone
+
 now = datetime.now()
 now_str = now.strftime("%Y-%m-%d%H:%M:%S")
 
-async def get_all_visit_last_day(userId:str):
+async def get_all_visit_last_day(userId:str, teleId:str):
     days = 30
     thirty_days_ago = datetime.now() - timedelta(days=days)
 
@@ -34,8 +37,15 @@ async def get_all_visit_last_day(userId:str):
     result = con.execute(query)
     data = result.fetchall()
 
+    timezone = get_user_timezone(telegram_id=teleId)
+    notestz =""
+
+    if timezone:
+        notestz = f" based UTC{timezone}"
+        timezone_offset = int(timezone[:0] + timezone[0+1:])
+
     if len(data) != 0:
-        res = f"Here is the visit history for last {days}:\n"
+        res = f"Here is the visit history for last {days}{notestz}:\n"
         day_before = ''
 
         for dt in data:    
@@ -43,6 +53,9 @@ async def get_all_visit_last_day(userId:str):
                 dt_created_at = datetime.strptime(dt.created_at, '%Y-%m-%d %H:%m:%S')
             else:
                 dt_created_at = dt.created_at 
+
+            if timezone:
+                dt_created_at = dt_created_at + timedelta(hours=timezone_offset)
             
             if day_before == '' or day_before != dt_created_at.strftime('%d %b %Y'):
                 day_before = dt_created_at.strftime('%d %b %Y')
@@ -57,7 +70,7 @@ async def get_all_visit_last_day(userId:str):
     else:
         return '<i>- No visit found -</i>'
 
-async def get_all_visit_csv(platform:str, userId:str):
+async def get_all_visit_csv(platform:str, userId:str, teleId:str):
     # Query builder
     query = select(
         pin.c.pin_name, 
@@ -86,6 +99,13 @@ async def get_all_visit_csv(platform:str, userId:str):
         output = io.StringIO()
         writer = csv.writer(output)
 
+        timezone = get_user_timezone(telegram_id=teleId)
+        notestz = "(GMT)"
+
+        if timezone:
+            timezone_offset = int(timezone[:0] + timezone[0+1:])
+            notestz = f"(UTC{timezone})"
+
         # Header
         writer.writerow([
             "Pin Name", 
@@ -93,8 +113,8 @@ async def get_all_visit_csv(platform:str, userId:str):
             "Pin Coordinate", 
             "Visit Context", 
             "Pin Address", 
-            "Visit Created At", 
-            "Pin Created At"
+            f"Visit Created At {notestz}", 
+            f"Pin Created At {notestz}"
         ])
 
         for dt in data:
@@ -111,6 +131,12 @@ async def get_all_visit_csv(platform:str, userId:str):
                 pin_created_at = datetime.strptime(dt.pin_created_at, '%Y-%m-%d %H:%m:%S')
             else:
                 pin_created_at = dt.pin_created_at  
+
+            if visit_created_at != '-' and timezone:
+                visit_created_at = visit_created_at + timedelta(hours=timezone_offset)
+            
+            if timezone:
+                pin_created_at = pin_created_at + timedelta(hours=timezone_offset)
 
             writer.writerow([
                 dt.pin_name, 
