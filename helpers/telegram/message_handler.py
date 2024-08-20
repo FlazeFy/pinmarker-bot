@@ -11,6 +11,7 @@ from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.track.track_queries import get_last_tracker_position
 from services.modules.user.user_queries import get_profile_by_telegram_id
 from services.modules.user.user_command import update_sign_out
+from helpers.telegram.repositories.repo_bot_history import api_get_command_history
 from helpers.telegram.typography import send_long_message
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -88,6 +89,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text=f"Showing last track position...\n{msg}\n", reply_markup=reply_markup, parse_mode='HTML')
 
+        elif query.data == '9':
+            res, type, _ = await api_get_command_history(tele_id=userTeleId)
+            keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            if type == 'file':
+                await query.message.reply_document(document=res, caption="Generate CSV file of history...\n\n", reply_markup=reply_markup)
+            elif type == 'text':
+                await query.edit_message_text(text=f"Showing bot history...\n{res}\n", reply_markup=reply_markup, parse_mode='HTML')
+            else:
+                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
+
         elif query.data == '0':
             keyboard = [
                 [InlineKeyboardButton("Yes", callback_data='sign_out_yes')],
@@ -124,14 +136,18 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main_menu_keyboard():
     keyboard = [
-        [InlineKeyboardButton("1. Show my pin", callback_data='1')],
-        [InlineKeyboardButton("2. Show detail pin", callback_data='2')],
-        [InlineKeyboardButton("3. History visit", callback_data='3')],
-        [InlineKeyboardButton("3.1 History visit in CSV ", callback_data='3/csv')],
-        [InlineKeyboardButton("4. Dashboard", callback_data='4')],
-        [InlineKeyboardButton("5. Stats", callback_data='5')],
-        [InlineKeyboardButton("6. Change password", callback_data='6')],
-        [InlineKeyboardButton("7. Last Live Tracker Position", callback_data='7')],
-        [InlineKeyboardButton("0. Exit Bot", callback_data='0')]
+        [InlineKeyboardButton("Show my pin", callback_data='1')],
+        [InlineKeyboardButton("Show detail pin", callback_data='2')],
+        [InlineKeyboardButton("History visit", callback_data='3')],
+        [InlineKeyboardButton("History visit in CSV ", callback_data='3/csv')],
+        [InlineKeyboardButton("Dashboard", callback_data='4')],
+        [InlineKeyboardButton("Stats", callback_data='5')],
+        [InlineKeyboardButton("Change password", callback_data='6')],
+        [InlineKeyboardButton("Last Live Tracker Position", callback_data='7')],
+        [InlineKeyboardButton("- Send Feedback -", callback_data='8')],
+        [InlineKeyboardButton("- BOT History -", callback_data='9')],
+        [InlineKeyboardButton("- Help Center -", callback_data='10')],
+        [InlineKeyboardButton("- About Us -", callback_data='11')],
+        [InlineKeyboardButton("Exit Bot", callback_data='0')]
     ]
     return InlineKeyboardMarkup(keyboard)
