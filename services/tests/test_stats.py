@@ -4,7 +4,8 @@ user_id = 'fcd3f23e-e5aa-11ee-892a-3216422910e9'
 base_url = 'http://127.0.0.1:8000'
 
 def test_dashboard_route():
-    response = requests.get(f"{base_url}/api/v1/stats/dashboard/{user_id}")
+    role = 'user'
+    response = requests.get(f"{base_url}/api/v1/stats/dashboard/{user_id}/{role}")
     data = response.json()
 
     # Check the status code

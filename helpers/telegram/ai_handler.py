@@ -7,6 +7,7 @@ nltk.download('punkt')
 # Helper
 from helpers.telegram.typography import send_long_message
 from helpers.generator import get_city_from_coordinate
+from helpers.sqlite.template import post_ai_command
 
 import os
 import io
@@ -47,6 +48,8 @@ async def handle_ai(update: Update, context: CallbackContext):
 
     # Respond / Presenting data
     present_respond = ['Showing','Let me show you the',"Here's the","I got the","See this"]
+
+    post_ai_command(telegram_id=userTeleId,command=user_message)
 
     if any(dt in tokens for dt in greetings):
         res = "Hi there! How can I assist you today?"
