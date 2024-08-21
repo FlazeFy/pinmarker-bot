@@ -15,7 +15,7 @@ from services.modules.user.user_command import update_sign_out
 from helpers.telegram.repositories.repo_bot_history import api_get_command_history
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
 from helpers.telegram.repositories.repo_track import api_get_last_track
-from helpers.telegram.repositories.repo_pin import api_get_all_pin
+from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export
 from helpers.telegram.typography import send_long_message
 from helpers.sqlite.template import post_ai_command
 
@@ -45,6 +45,22 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')            
+
+        elif query.data == '1/export':
+            post_ai_command(telegram_id=userTeleId,command='/Export pin')
+            res, is_success = await api_get_all_pin_export(user_id=userId)
+            keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            if is_success:
+                if len(res) == 1:
+                    await query.edit_message_text(text=f"Generate Exported CSV file of pin...", parse_mode='HTML')     
+                else:     
+                    await query.edit_message_text(text=f"Generate Exported CSV file of pin...\nSpliting into {len(res)} parts. Each of these have maximum 100 pin", parse_mode='HTML')     
+                for idx, dt in enumerate(res):
+                    await query.message.reply_document(document=dt, caption=f"Part-{idx+1}\n")
+                await query.edit_message_text(text=f"Export finished", parse_mode='HTML',reply_markup= main_menu_keyboard(),)     
+            else:
+                await query.edit_message_text(text=f"<i>- {res} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')         
         
         # if query.data == '2':
 
@@ -162,6 +178,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 def main_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("Show my pin", callback_data='1')],
+        [InlineKeyboardButton("Export pin", callback_data='1/export')],
         [InlineKeyboardButton("Show detail pin", callback_data='2')],
         [InlineKeyboardButton("History visit", callback_data='3')],
         [InlineKeyboardButton("History visit in CSV ", callback_data='3/csv')],

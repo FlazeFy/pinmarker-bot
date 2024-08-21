@@ -40,6 +40,39 @@ async def get_all_pin(userId:str):
             "count": 0
         }
     
+async def get_all_pin_export_query(userId:str):
+    # Query builder
+    query = select(
+        pin.c.pin_name,
+        pin.c.pin_lat,
+        pin.c.pin_long,
+    ).where(
+        and_(
+            pin.c.created_by == userId,
+            pin.c.deleted_at.is_(None)
+        )
+    ).order_by(
+        pin.c.pin_name.asc()
+    )
+
+    # Exec
+    result = con.execute(query)
+    data = result.fetchall()
+
+    if len(data) != 0:
+        data_list = [dict(row._mapping) for row in data]
+        return {
+            "data": data_list,
+            "message": "Pin found",
+            "count": len(data)
+        }
+    else:
+        return {
+            "data": None,
+            "message": "Pin not found",
+            "count": 0
+        }
+    
 async def get_pin_by_name(name:str):
     # Query builder
     query = select(
