@@ -37,7 +37,7 @@ async def api_get_command_history(tele_id: str):
                 res = "\n".join([f"Command: {item['command']}\nCreated At: {item['created_at']}" for item in data['data']])
                 return res, 'text', True
         else:
-            return "No history found.", False
+            return "No history found", False
     except requests.exceptions.RequestException as e:
         err_msg = f"Something went wrong: {e}"
         return err_msg, None, False

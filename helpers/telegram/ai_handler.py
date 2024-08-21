@@ -9,6 +9,8 @@ from helpers.telegram.typography import send_long_message
 from helpers.generator import get_city_from_coordinate
 from helpers.sqlite.template import post_ai_command
 
+from helpers.telegram.repositories.repo_stats import api_get_dashboard
+
 import os
 import io
 import random
@@ -25,7 +27,6 @@ async def handle_ai(update: Update, context: CallbackContext):
     tokens = word_tokenize(user_message)
     userTeleId = update.effective_user.id
     profile = await get_profile_by_telegram_id(teleId=userTeleId)
-    userId = profile['data'].id
 
     res = "Sorry i dont understand your message"
 
@@ -51,6 +52,9 @@ async def handle_ai(update: Update, context: CallbackContext):
 
     post_ai_command(telegram_id=userTeleId,command=user_message)
 
+    role = profile['role']
+    userId = profile['data'].id
+
     if any(dt in tokens for dt in greetings):
         res = "Hi there! How can I assist you today?"
         await update.message.reply_text(res)
@@ -61,37 +65,42 @@ async def handle_ai(update: Update, context: CallbackContext):
         res = ['Your welcome','At my pleasure']
         await update.message.reply_text(random.choice(res))
     elif any(dt in tokens for dt in self_command):
-
-        # Personal data
-        if any(dt in tokens for dt in location_command):
-            res = await get_all_pin(type='bot', userId=userId)
-            message_chunks = send_long_message(res)
-            await update.message.reply_text(f"{random.choice(present_respond)} location...")
-            for chunk in message_chunks:
-                await update.message.reply_text(chunk, parse_mode='HTML')
-        elif any(dt in tokens for dt in stats_command):
-            res = await get_stats(userId=userId)
-            res_capture = await get_stats_capture()
-            if res_capture:
-                with open(res_capture, 'rb') as photo:
-                    await update.message.reply_photo(photo)
-                    os.remove(res_capture)
-            await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
-        elif 'dashboard' in tokens:
-            res = await get_dashboard(type='bot', userId=userId)
-            await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
-        
-        # Visit history
-        elif any(dt in  tokens for dt in history_command):
-            res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
-            csv_content, file_name = await get_all_visit_csv(platform='telegram',userId=userId,teleId=userTeleId)
-            if csv_content and file_name:
-                file = io.BytesIO(csv_content.encode('utf-8'))
-                file.name = file_name     
+        if profile["is_found"]:
+            # Personal data
+            if any(dt in tokens for dt in location_command):
+                res = await get_all_pin(type='bot', userId=userId)
+                message_chunks = send_long_message(res)
+                await update.message.reply_text(f"{random.choice(present_respond)} location...")
+                for chunk in message_chunks:
+                    await update.message.reply_text(chunk, parse_mode='HTML')
+            elif any(dt in tokens for dt in stats_command):
+                res = await get_stats(userId=userId)
+                res_capture = await get_stats_capture()
+                if res_capture:
+                    with open(res_capture, 'rb') as photo:
+                        await update.message.reply_photo(photo)
+                        os.remove(res_capture)
                 await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
-                await update.message.reply_document(document=file, caption="Generate CSV file of history...\n\n")
-            else:
-                await update.message.reply_text(f"Export failed, {file_name}", parse_mode='HTML')
+            elif 'dashboard' in tokens:
+                res, is_success = await api_get_dashboard(tele_id=userId, role=role)
+                if is_success:
+                    await update.message.reply_text(f"{random.choice(present_respond)} dashboard...\n\n{res}", parse_mode='HTML')
+                else:
+                    await update.message.reply_text(f"{random.choice(present_respond)} dashboard...\n\n{res}", parse_mode='HTML')
+            
+            # Visit history
+            elif any(dt in  tokens for dt in history_command):
+                res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
+                csv_content, file_name = await get_all_visit_csv(platform='telegram',userId=userId,teleId=userTeleId)
+                if csv_content and file_name:
+                    file = io.BytesIO(csv_content.encode('utf-8'))
+                    file.name = file_name     
+                    await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
+                    await update.message.reply_document(document=file, caption="Generate CSV file of history...\n\n")
+                else:
+                    await update.message.reply_text(f"Export failed, {file_name}", parse_mode='HTML')
+        else:
+            await update.message.reply_text("You're not signed in yet")
 
     # Topic data
     elif any(dt in tokens for dt in topic_self_command):

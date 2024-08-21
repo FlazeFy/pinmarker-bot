@@ -6,12 +6,15 @@ import os
 # Services
 from services.modules.pin.pin_queries import get_all_pin
 from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
-from services.modules.stats.stats_queries import get_dashboard, get_stats
+from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
-from services.modules.track.track_queries import get_last_tracker_position
 from services.modules.user.user_queries import get_profile_by_telegram_id
 from services.modules.user.user_command import update_sign_out
+
+# Helpers
 from helpers.telegram.repositories.repo_bot_history import api_get_command_history
+from helpers.telegram.repositories.repo_stats import api_get_dashboard
+from helpers.telegram.repositories.repo_track import api_get_last_track
 from helpers.telegram.typography import send_long_message
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -59,11 +62,13 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.edit_message_text(text=f"<i>- {file_name} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')
 
         elif query.data == '4':
-            res = await get_dashboard(type='bot', userId=userId, role=role)
+            res, is_success = await api_get_dashboard(tele_id=userId, role=role)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.edit_message_text(text=f"Showing dashboard...\n\n", reply_markup=reply_markup, parse_mode='HTML')
-            await query.edit_message_text(text=res, reply_markup=reply_markup, parse_mode='HTML')
+            if is_success:
+                await query.edit_message_text(text=f"Showing dashboard...\n{res}\n", reply_markup=reply_markup, parse_mode='HTML')
+            else:
+                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
         elif query.data == '5':
             res = await get_stats(userId=userId)
@@ -82,12 +87,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(text=f"Preparing field...\n", reply_markup=reply_markup)
 
         elif query.data == '7':
-            track_lat, track_long, msg = await get_last_tracker_position()
-            if track_lat is not None and track_long is not None:
-                await context.bot.send_location(chat_id=query.message.chat_id, latitude=track_lat, longitude=track_long)
+            track_lat, track_long, msg, is_success = await api_get_last_track(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.edit_message_text(text=f"Showing last track position...\n{msg}\n", reply_markup=reply_markup, parse_mode='HTML')
+            if is_success:
+                if track_lat is not None and track_long is not None:
+                    await context.bot.send_location(chat_id=query.message.chat_id, latitude=track_lat, longitude=track_long)
+                await query.edit_message_text(text=f"Showing last tracking...\n{msg}\n", reply_markup=reply_markup, parse_mode='HTML')
+            else:
+                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
         elif query.data == '9':
             res, type, _ = await api_get_command_history(tele_id=userTeleId)

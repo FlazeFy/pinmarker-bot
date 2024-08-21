@@ -8,7 +8,7 @@ router_stats = APIRouter()
 @router_stats.get("/api/v1/stats/dashboard/{id}/{role}", response_model=dict)
 async def get_dashboard_route(id: str, role:str):
     try:
-        return await get_dashboard(type='api', userId=id, role=role)
+        return await get_dashboard(userId=id, role=role)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
         
