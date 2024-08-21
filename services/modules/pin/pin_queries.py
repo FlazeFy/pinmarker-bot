@@ -5,14 +5,16 @@ from sqlalchemy import select, and_
 from sqlalchemy.sql.functions import concat
 from helpers.converter import calculate_distance
 
-async def get_all_pin(type:str, userId:str):
+async def get_all_pin(userId:str):
     # Query builder
     query = select(
         pin.c.pin_name,
         pin.c.pin_desc,
         concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
         pin.c.pin_category,
-        pin.c.pin_person
+        pin.c.pin_person,
+        pin.c.pin_address,
+        pin.c.created_at
     ).where(
         pin.c.created_by == userId,
     ).order_by(
@@ -25,39 +27,18 @@ async def get_all_pin(type:str, userId:str):
     data = result.fetchall()
 
     if len(data) != 0:
-        res = f"You have {len(data)} pins.\nHere is the list:\n"
-        pin_category_before = ''
-
-        if type == 'bot':
-            for idx, dt in enumerate(data, start=1):
-                if pin_category_before == '' or pin_category_before != dt.pin_category:
-                    res += f"<b>Category: {dt.pin_category}</b>\n\n"
-                    pin_category_before = dt.pin_category
-                
-                res += (
-                    f"<b>{idx}. {dt.pin_name}</b>\n"
-                    f"Notes : {dt.pin_desc or '<i>- No Description Provided -</i>'}\n"
-                    f"Person In Contact : {dt.pin_person or '-'}\n"
-                    f"https://www.google.com/maps/place/{dt.pin_coordinate}\n\n"
-                )
-
-            return res
-        elif type == 'api':
-            data_list = [dict(row._mapping) for row in data]
-            return {
-                "data": data_list,
-                "message": "Pin found",
-                "count": len(data)
-            }
+        data_list = [dict(row._mapping) for row in data]
+        return {
+            "data": data_list,
+            "message": "Pin found",
+            "count": len(data)
+        }
     else:
-        if type == 'bot':
-            return '<i>- No pin found -</i>'
-        elif type == 'api':
-            return {
-                "data": None,
-                "message": "Pin not found",
-                "count": 0
-            }
+        return {
+            "data": None,
+            "message": "Pin not found",
+            "count": 0
+        }
     
 async def get_pin_by_name(name:str):
     # Query builder

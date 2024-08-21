@@ -10,20 +10,22 @@ async def api_get_command_history(tele_id: str):
         data = response.json()
 
         if data['count'] > 0:
-            if data['count'] > 0:
+            if data['count'] > 30:
                 output = io.StringIO()
                 writer = csv.writer(output)
 
                 # Header
                 writer.writerow([
                     "Command", 
-                    "Created At"
+                    "Created At",
+                    "Total"
                 ])
 
                 for dt in data['data']:
                     writer.writerow([
                         dt['command'], 
                         dt['created_at'],
+                        dt['total'],
                     ])
 
                 output.seek(0)

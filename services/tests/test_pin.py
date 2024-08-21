@@ -25,15 +25,20 @@ def test_get_all_pin_api():
         assert 'pin_coordinate' in dt
         assert 'pin_category' in dt
         assert 'pin_person' in dt
+        assert 'pin_address' in dt
+        assert 'created_at' in dt
         
         assert isinstance(dt['pin_name'], str)
         assert isinstance(dt['pin_coordinate'], str)
         assert isinstance(dt['pin_category'], str)
+        assert isinstance(dt['created_at'], str)
 
         if dt['pin_desc'] is not None:
             assert isinstance(dt['pin_desc'], str)
         if dt['pin_person'] is not None:
             assert isinstance(dt['pin_person'], str)
+        if dt['pin_address'] is not None:
+            assert isinstance(dt['pin_address'], str)
 
 def test_get_pin_by_category_api():
     category = 'cafe'

@@ -15,7 +15,9 @@ from services.modules.user.user_command import update_sign_out
 from helpers.telegram.repositories.repo_bot_history import api_get_command_history
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
 from helpers.telegram.repositories.repo_track import api_get_last_track
+from helpers.telegram.repositories.repo_pin import api_get_all_pin
 from helpers.telegram.typography import send_long_message
+from helpers.sqlite.template import post_ai_command
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -31,17 +33,23 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
 
         if query.data == '1':
-            res = await get_all_pin(type='bot',userId=userId)
-            message_chunks = send_long_message(res)
+            post_ai_command(telegram_id=userTeleId,command='/Show my pin')
+            res, type, is_success = await api_get_all_pin(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.edit_message_text(text="Showing location...", reply_markup=reply_markup, parse_mode='HTML')
-            for chunk in message_chunks:
-                await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
+            if type == 'file':
+                await query.message.reply_document(document=res, caption="Generate CSV file of pin...\n\n", reply_markup=reply_markup)
+            elif type == 'text':
+                message_chunks = send_long_message(res)
+                for chunk in message_chunks:
+                    await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
+            else:
+                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')            
         
         # if query.data == '2':
 
         elif query.data == '3':
+            post_ai_command(telegram_id=userTeleId,command='/History visit')
             res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
             message_chunks = send_long_message(res)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -51,6 +59,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
 
         elif query.data == '3/csv':
+            post_ai_command(telegram_id=userTeleId,command='/History visit in csv')
             csv_content, file_name = await get_all_visit_csv(platform='telegram', userId=userId, teleId=userTeleId)
             if csv_content and file_name:
                 file = io.BytesIO(csv_content.encode('utf-8'))
@@ -62,6 +71,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.edit_message_text(text=f"<i>- {file_name} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')
 
         elif query.data == '4':
+            post_ai_command(telegram_id=userTeleId,command='/Dashboard')
             res, is_success = await api_get_dashboard(tele_id=userId, role=role)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -71,6 +81,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
         elif query.data == '5':
+            post_ai_command(telegram_id=userTeleId,command='/Stats')
             res = await get_stats(userId=userId)
             res_capture = await get_stats_capture()
             if res_capture:
@@ -87,6 +98,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(text=f"Preparing field...\n", reply_markup=reply_markup)
 
         elif query.data == '7':
+            post_ai_command(telegram_id=userTeleId,command='/Last Live Tracker Position')
             track_lat, track_long, msg, is_success = await api_get_last_track(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -108,6 +120,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
+        elif query.data == '11':
+            keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(text=f"PinMarker is an apps that store data about marked location on your maps. You can save location and separate it based on category or list. You can collaborate and share your saved location with all people. We also provide stats so you can monitoring your saved location.\n\nWe available on\nWeb : https://pinmarker.leonardhors.com/\n Telegram BOT : @Pinmarker_bot\nDiscord BOT : \nMobile Apps : \n\nParts of FlazenApps", reply_markup=reply_markup)
+            
         elif query.data == '0':
             keyboard = [
                 [InlineKeyboardButton("Yes", callback_data='sign_out_yes')],

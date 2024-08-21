@@ -7,7 +7,7 @@ router_pin = APIRouter()
 @router_pin.get("/api/v1/pin/{id}", response_model=dict)
 async def get_all_pin_api(id: str):
     try:
-        return await get_all_pin(type='api', userId=id)
+        return await get_all_pin(userId=id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
