@@ -23,15 +23,18 @@ def get_UUID():
     return uuid
 
 def get_token_validation(length: int) -> str:
-    characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    res = ''
-    
-    char_count = len(characters)
-    for _ in range(length):
-        rand_index = random.randint(0, char_count - 1)
-        res += characters[rand_index]
-    
-    return res
+    if length > 0:
+        characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        res = ''
+        
+        char_count = len(characters)
+        for _ in range(length):
+            rand_index = random.randint(0, char_count - 1)
+            res += characters[rand_index]
+        
+        return res
+    else: 
+        return "Cant't have parameter below 1"
 
 def get_city_from_coordinate(latitude, longitude):
     gmaps = googlemaps.Client(key=MAPS_API_KEY)
