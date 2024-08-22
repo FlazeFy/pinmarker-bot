@@ -7,14 +7,28 @@ router_pin = APIRouter()
 @router_pin.get("/api/v1/pin/{id}", response_model=dict)
 async def get_all_pin_api(id: str):
     try:
-        return await get_all_pin(userId=id)
+        return await get_all_pin(userId=id, platform='telegram')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.get("/api/v2/pin", response_model=dict)
+async def get_all_pin_api():
+    try:
+        return await get_all_pin(userId=None, platform='discord')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @router_pin.get("/api/v1/pin_export/{id}", response_model=dict)
 async def get_all_pin_export_api(id: str):
     try:
-        return await get_all_pin_export_query(userId=id)
+        return await get_all_pin_export_query(userId=id, platform='telegram')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.get("/api/v2/pin_export", response_model=dict)
+async def get_all_pin_export_api():
+    try:
+        return await get_all_pin_export_query(userId=None, platform='discord')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

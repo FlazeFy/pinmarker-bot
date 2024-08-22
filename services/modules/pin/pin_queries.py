@@ -1,26 +1,48 @@
 from services.modules.pin.pin_model import pin
+from services.modules.user.user_model import user
 from services.modules.visit.visit_model import visit
 from configs.configs import con
 from sqlalchemy import select, and_
 from sqlalchemy.sql.functions import concat
 from helpers.converter import calculate_distance
 
-async def get_all_pin(userId:str):
+async def get_all_pin(userId:str, platform:str):
     # Query builder
-    query = select(
-        pin.c.pin_name,
-        pin.c.pin_desc,
-        concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
-        pin.c.pin_category,
-        pin.c.pin_person,
-        pin.c.pin_address,
-        pin.c.created_at
-    ).where(
-        pin.c.created_by == userId,
-    ).order_by(
-        pin.c.pin_category.asc(),
-        pin.c.pin_name.asc()
-    )
+    if platform == 'telegram':
+        query = select(
+            pin.c.pin_name,
+            pin.c.pin_desc,
+            concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
+            pin.c.pin_category,
+            pin.c.pin_person,
+            pin.c.pin_address,
+            pin.c.created_at
+        ).where(
+            pin.c.created_by == userId,
+        ).order_by(
+            pin.c.pin_category.asc(),
+            pin.c.pin_name.asc()
+        )
+    else:
+        query = select(
+            pin.c.pin_name,
+            pin.c.pin_desc,
+            concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
+            pin.c.pin_category,
+            pin.c.pin_person,
+            pin.c.pin_address,
+            pin.c.pin_call,
+            pin.c.pin_email,
+            pin.c.created_at,
+            user.c.username.label('created_by')
+        ).join(
+            user, user.c.id == pin.c.created_by
+        ).where(
+            pin.c.deleted_at.is_(None)
+        ).order_by(
+            pin.c.pin_category.asc(),
+            pin.c.pin_name.asc()
+        )
 
     # Exec
     result = con.execute(query)
@@ -40,20 +62,35 @@ async def get_all_pin(userId:str):
             "count": 0
         }
     
-async def get_all_pin_export_query(userId:str):
+async def get_all_pin_export_query(userId:str, platform:str):
     # Query builder
-    query = select(
-        pin.c.pin_name,
-        pin.c.pin_lat,
-        pin.c.pin_long,
-    ).where(
-        and_(
-            pin.c.created_by == userId,
-            pin.c.deleted_at.is_(None)
+    if platform == 'telegram':
+        query = select(
+            pin.c.pin_name,
+            pin.c.pin_lat,
+            pin.c.pin_long,
+        ).where(
+            and_(
+                pin.c.created_by == userId,
+                pin.c.deleted_at.is_(None)
+            )
+        ).order_by(
+            pin.c.pin_name.asc()
         )
-    ).order_by(
-        pin.c.pin_name.asc()
-    )
+    else:
+        query = select(
+            pin.c.pin_name,
+            pin.c.pin_lat,
+            pin.c.pin_long,
+            pin.c.created_at,
+            user.c.username.label('created_by')
+        ).join(
+            user, user.c.id == pin.c.created_by
+        ).where(
+            pin.c.deleted_at.is_(None)
+        ).order_by(
+            pin.c.pin_name.asc()
+        )
 
     # Exec
     result = con.execute(query)
