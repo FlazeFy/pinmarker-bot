@@ -1,9 +1,8 @@
 from services.modules.pin.pin_queries import get_all_pin
-# from services.modules.visit.visit_queries import get_all_visit, get_all_visit_csv
 # from helpers.discord.typography import send_long_message,convert_html_to_discord_chat
 # from services.modules.stats.stats_queries import get_dashboard, get_stats
-# from services.modules.track.track_queries import get_last_tracker_position
 from helpers.discord.repositories.repo_pin import api_get_all_pin_export, api_get_all_pin
+from helpers.discord.repositories.repo_feedback import api_get_all_feedback
 
 from discord import File
 
@@ -14,7 +13,7 @@ async def on_message_handler(bot, message):
     if bot.user.mentioned_in(message):
         server_name = message.guild.name if message.guild else 'Unknown Server'
         await message.channel.send(f'Hello! everyone in {server_name}. Im PinMarker Bot, what do you want me to do?')
-        await message.channel.send('1. Show all pin\n2. Show all detail pin\n3. Show all dictionary\n4. Show all user\n5. Dashboard\n6. Stats\n')
+        await message.channel.send('1. Show all pin\n2. Show all detail pin\n3. Show all dictionary\n4. Show all user\n5. Show all feedback\n6. Dashboard\n7. Stats\n')
 
     if message.content == '!ping':
         server_name = message.guild.name if message.guild else 'Unknown Server'
@@ -34,7 +33,14 @@ async def on_message_handler(bot, message):
     elif message.content == '2':
         res, is_success = await api_get_all_pin()
         if is_success:
-            await message.channel.send("Generate CSV file of pin...\n\n", file=File(res, filename=f"Pin_List.csv"))
+            await message.channel.send("Generate CSV file of pin...\n\n", file=File(res, filename=f"Feeback_List.csv"))
+            await message.channel.send(f'Export finished')  
+        else: 
+            await message.channel.send(f'{res}')
+    elif message.content == '5':
+        res, is_success = await api_get_all_feedback()
+        if is_success:
+            await message.channel.send("Generate CSV file of feedback...\n\n", file=File(res, filename=f"Pin_List.csv"))
             await message.channel.send(f'Export finished')  
         else: 
             await message.channel.send(f'{res}')

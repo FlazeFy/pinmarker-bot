@@ -4,7 +4,6 @@ import io
 import os
 
 # Services
-from services.modules.pin.pin_queries import get_all_pin
 from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
 from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
