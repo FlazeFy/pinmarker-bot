@@ -3,6 +3,7 @@ from services.modules.pin.pin_queries import get_all_pin
 # from services.modules.stats.stats_queries import get_dashboard, get_stats
 from helpers.discord.repositories.repo_pin import api_get_all_pin_export, api_get_all_pin
 from helpers.discord.repositories.repo_feedback import api_get_all_feedback
+from helpers.discord.repositories.repo_user import api_get_all_user
 
 from discord import File
 
@@ -34,6 +35,13 @@ async def on_message_handler(bot, message):
         res, is_success = await api_get_all_pin()
         if is_success:
             await message.channel.send("Generate CSV file of pin...\n\n", file=File(res, filename=f"Feeback_List.csv"))
+            await message.channel.send(f'Export finished')  
+        else: 
+            await message.channel.send(f'{res}')
+    elif message.content == '4':
+        res, is_success = await api_get_all_user()
+        if is_success:
+            await message.channel.send("Generate CSV file of user...\n\n", file=File(res, filename=f"User_List.csv"))
             await message.channel.send(f'Export finished')  
         else: 
             await message.channel.send(f'{res}')

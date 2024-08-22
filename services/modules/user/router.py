@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from services.modules.user.user_queries import get_check_context_query
+from services.modules.user.user_queries import get_check_context_query, get_all_user
 from services.modules.user.validate_request_commands import post_req_register_command, post_validate_regis_command
 router_user = APIRouter()
 
@@ -8,6 +8,13 @@ router_user = APIRouter()
 async def get_check_context(type: str, context: str):
     try:
         return await get_check_context_query(type=type, context=context)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_user.get("/api/v2/user", response_model=dict)
+async def get_all_user_api():
+    try:
+        return await get_all_user()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
