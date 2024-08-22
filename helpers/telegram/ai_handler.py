@@ -50,7 +50,7 @@ async def handle_ai(update: Update, context: CallbackContext):
     # Respond / Presenting data
     present_respond = ['Showing','Let me show you the',"Here's the","I got the","See this"]
 
-    post_ai_command(telegram_id=userTeleId,command=user_message)
+    post_ai_command(socmed_id=userTeleId, socmed_platform='telegram', command=user_message)
 
     role = profile['role']
     userId = profile['data'].id

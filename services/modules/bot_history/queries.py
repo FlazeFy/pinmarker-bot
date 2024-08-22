@@ -5,13 +5,13 @@ cursor = conn.cursor()
 base_table = 'nlp_history'
 
 # Query
-async def get_bot_history(tele_id:str):
+async def get_bot_history(socmed_id:str):
     cursor.execute(f'''
         SELECT command, created_at, COUNT(1) as total 
         FROM {base_table} 
-        WHERE telegram_id = ?
+        WHERE socmed_id = ?
         GROUP BY command
-    ''', (tele_id,))
+    ''', (socmed_id,))
     result = cursor.fetchall()
 
     if result:

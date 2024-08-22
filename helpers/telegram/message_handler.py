@@ -33,7 +33,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
 
         if query.data == '1':
-            post_ai_command(telegram_id=userTeleId,command='/Show my pin')
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Show my pin')
             res, type, is_success = await api_get_all_pin(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -47,7 +47,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')            
 
         elif query.data == '1/export':
-            post_ai_command(telegram_id=userTeleId,command='/Export pin')
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Export pin')
             res, is_success = await api_get_all_pin_export(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -65,7 +65,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # if query.data == '2':
 
         elif query.data == '3':
-            post_ai_command(telegram_id=userTeleId,command='/History visit')
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/History visit')
             res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
             message_chunks = send_long_message(res)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -75,7 +75,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
 
         elif query.data == '3/csv':
-            post_ai_command(telegram_id=userTeleId,command='/History visit in csv')
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/History visit in csv')
             csv_content, file_name = await get_all_visit_csv(platform='telegram', userId=userId, teleId=userTeleId)
             if csv_content and file_name:
                 file = io.BytesIO(csv_content.encode('utf-8'))
@@ -87,7 +87,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.edit_message_text(text=f"<i>- {file_name} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')
 
         elif query.data == '4':
-            post_ai_command(telegram_id=userTeleId,command='/Dashboard')
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Dashboard')
             res, is_success = await api_get_dashboard(tele_id=userId, role=role)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -97,7 +97,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
         elif query.data == '5':
-            post_ai_command(telegram_id=userTeleId,command='/Stats')
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Stats')
             res = await get_stats(userId=userId)
             res_capture = await get_stats_capture()
             if res_capture:
@@ -114,7 +114,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(text=f"Preparing field...\n", reply_markup=reply_markup)
 
         elif query.data == '7':
-            post_ai_command(telegram_id=userTeleId,command='/Last Live Tracker Position')
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Last Live Tracker Position')
             track_lat, track_long, msg, is_success = await api_get_last_track(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)

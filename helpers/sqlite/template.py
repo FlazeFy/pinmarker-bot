@@ -5,39 +5,42 @@ cursor = conn.cursor()
 
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS user_tz (
-        telegram_id INTEGER PRIMARY KEY,
-        timezone TEXT
+        socmed_id TEXT PRIMARY KEY, 
+        socmed_platform TEXT(14),
+        timezone TEXT(6),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 ''')
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS nlp_history (
-        telegram_id INTEGER PRIMARY KEY,
+        socmed_id TEXT PRIMARY KEY, 
+        socmed_platform TEXT(14),
         command TEXT,
-        created_at TEXT
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 ''')
 
 conn.commit()
 
 # Command
-def post_user_timezone(telegram_id, timezone):
+def post_user_timezone(socmed_id, socmed_platform, timezone):
     cursor.execute('''
-        INSERT OR REPLACE INTO user_tz (telegram_id, timezone)
-        VALUES (?, ?)
-    ''', (telegram_id, timezone))
+        INSERT OR REPLACE INTO user_tz (socmed_id, socmed_platform, timezone)
+        VALUES (?, ?, ?)
+    ''', (socmed_id, socmed_platform, timezone))
     conn.commit()
 
-def post_ai_command(telegram_id, command):
+def post_ai_command(socmed_id, socmed_platform, command):
     cursor.execute('''
-        INSERT OR REPLACE INTO nlp_history (telegram_id, command, created_at)
-        VALUES (?, ?, datetime('now'))
-    ''', (telegram_id, command))
+        INSERT OR REPLACE INTO nlp_history (socmed_id, socmed_platform, command)
+        VALUES (?, ?, ?)
+    ''', (socmed_id, socmed_platform, command))
     conn.commit()
 
 # Query
-def get_user_timezone(telegram_id):
+def get_user_timezone(socmed_id, socmed_platform):
     cursor.execute('''
-        SELECT timezone FROM user_tz WHERE telegram_id = ?
-    ''', (telegram_id,))
+        SELECT timezone FROM user_tz WHERE socmed_id = ? AND socmed_platform = ?
+    ''', (socmed_id, socmed_platform,))
     result = cursor.fetchone()
     return result[0] if result else None

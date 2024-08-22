@@ -30,7 +30,7 @@ async def location_command(update: Update, context: CallbackContext) -> None:
     if profile["is_found"]:
         userId = profile['data'].id
         username = "@"+profile["data"].username+" "
-        post_user_timezone(telegram_id=userTeleId, timezone=f"{'+' if utc_offset > 0 else '-'}{utc_offset}")
+        post_user_timezone(socmed_id=userTeleId, socmed_platform='telegram', timezone=f"{'+' if utc_offset > 0 else '-'}{utc_offset}")
     else:
         username = ""
 

@@ -37,7 +37,7 @@ async def get_all_visit_last_day(userId:str, teleId:str):
     result = con.execute(query)
     data = result.fetchall()
 
-    timezone = get_user_timezone(telegram_id=teleId)
+    timezone = get_user_timezone(socmed_id=teleId, socmed_platform='telegram')
     notestz =""
 
     if timezone:
@@ -99,7 +99,7 @@ async def get_all_visit_csv(platform:str, userId:str, teleId:str):
         output = io.StringIO()
         writer = csv.writer(output)
 
-        timezone = get_user_timezone(telegram_id=teleId)
+        timezone = get_user_timezone(socmed_id=teleId, socmed_platform='telegram')
         notestz = "(GMT)"
 
         if timezone:

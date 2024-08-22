@@ -1,6 +1,6 @@
 from configs.configs import meta
 from sqlalchemy import Table,Column
-from sqlalchemy.sql.sqltypes import Integer,String,DateTime,Boolean
+from sqlalchemy.sql.sqltypes import String,DateTime,Boolean
 
 pin=Table(
     'pin',meta,
