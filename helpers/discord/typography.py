@@ -23,3 +23,6 @@ def convert_html_to_discord_chat(message):
         return match.group(0)
 
     return re.sub(html_pattern, repl, message)
+
+def filter_out(tokens, list_out):
+    return ' '.join([token for token in tokens if token not in list_out])

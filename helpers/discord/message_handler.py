@@ -1,11 +1,13 @@
 import nltk
+import random
 from nltk.tokenize import word_tokenize
 nltk.download('punkt')
 
 from helpers.discord.repositories.repo_pin import api_get_all_pin_export, api_get_all_pin
 from helpers.discord.repositories.repo_feedback import api_get_all_feedback
 from helpers.discord.repositories.repo_user import api_get_all_user
-
+from helpers.discord.repositories.repo_global import api_get_global_list
+from helpers.discord.typography import send_long_message, filter_out
 from discord import File
 
 async def on_message_handler(bot, message):
@@ -32,6 +34,7 @@ async def on_message_handler(bot, message):
     async def usecase_get_all_pin():
         res, is_success = await api_get_all_pin()
         if is_success:
+            await message.channel.send(f"{random.choice(present_respond)}")
             await message.channel.send("Generate CSV file of pin...\n\n", file=File(res, filename=f"Feeback_List.csv"))
             await message.channel.send(f'Export finished')  
         else: 
@@ -39,6 +42,7 @@ async def on_message_handler(bot, message):
     async def usecase_get_all_pin_export():
         res, is_success = await api_get_all_pin_export()
         if is_success:
+            await message.channel.send(f"{random.choice(present_respond)}")
             if len(res) == 1:
                 await message.channel.send(f'Generate Exported CSV file of pin...')
             else:     
@@ -51,6 +55,7 @@ async def on_message_handler(bot, message):
     async def usecase_get_all_feedback():
         res, is_success = await api_get_all_feedback()
         if is_success:
+            await message.channel.send(f"{random.choice(present_respond)}")
             await message.channel.send("Generate CSV file of feedback...\n\n", file=File(res, filename=f"Pin_List.csv"))
             await message.channel.send(f'Export finished')  
         else: 
@@ -59,8 +64,22 @@ async def on_message_handler(bot, message):
     async def usecase_get_all_user():
         res, is_success = await api_get_all_user()
         if is_success:
+            await message.channel.send(f"{random.choice(present_respond)}")
             await message.channel.send("Generate CSV file of user...\n\n", file=File(res, filename=f"User_List.csv"))
             await message.channel.send(f'Export finished')  
+        else: 
+            await message.channel.send(f'{res}')
+
+    async def usecase_get_global_list(search:str):
+        search = search.lower()
+        res, type, is_success = await api_get_global_list(search=search)
+        if is_success:
+            await message.channel.send(f"{random.choice(present_respond)}")
+            if type == 'text':
+                await message.channel.send(res)
+            else:
+                await message.channel.send("Generate CSV file of result global search...\n\n", file=File(res, filename=f"Search_by_{search}.csv"))
+                await message.channel.send(f'Export finished')  
         else: 
             await message.channel.send(f'{res}')
 
@@ -81,7 +100,7 @@ async def on_message_handler(bot, message):
         await message.channel.send(res)
     elif any(dt in tokens for dt in thanks):
         res = ['Your welcome','At my pleasure']
-        await message.channel.send(res)
+        await message.channel.send(f"{random.choice(res)}")
     elif any(dt in tokens for dt in generate_command):
         if any(dt in tokens for dt in pin_command):
             if any(dt in tokens for dt in ['header','short','import','split']):
@@ -94,6 +113,11 @@ async def on_message_handler(bot, message):
 
         elif any(dt in tokens for dt in user_command): 
             await usecase_get_all_user()
+        
+    elif any(dt in tokens for dt in where_command): 
+        clean_search = filter_out(tokens, where_command+global_command).strip()
+        await usecase_get_global_list(search=clean_search)
+
     else:
         if message.content == '!ping':
             server_name = message.guild.name if message.guild else 'Unknown Server'
@@ -109,6 +133,9 @@ async def on_message_handler(bot, message):
 
         elif message.content == '5':
             await usecase_get_all_feedback()
+
+        else:
+            await message.channel.send(res)
             
 
 
