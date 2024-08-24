@@ -4,7 +4,7 @@ from services.modules.pin.global_list_rel_model import global_list_pin_relation
 from services.modules.user.user_model import user
 from services.modules.visit.visit_model import visit
 from configs.configs import con
-from sqlalchemy import select, and_, func, or_
+from sqlalchemy import select, and_, func, or_, case
 from sqlalchemy.sql.functions import concat
 from helpers.converter import calculate_distance
 
@@ -29,21 +29,32 @@ async def get_all_pin(userId:str, platform:str):
         query = select(
             pin.c.pin_name,
             pin.c.pin_desc,
-            concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
+            case(
+                (global_list_pin_relation.c.pin_id.is_not(None), concat(pin.c.pin_lat, ',', pin.c.pin_long)), 
+                else_='- hidden -').label('pin_coordinate'),
             pin.c.pin_category,
             pin.c.pin_person,
-            pin.c.pin_address,
+            case(
+                (global_list_pin_relation.c.pin_id.is_not(None), pin.c.pin_address), 
+                else_='- hidden -').label('pin_address'),
             pin.c.pin_call,
             pin.c.pin_email,
             pin.c.created_at,
-            user.c.username.label('created_by')
+            user.c.username.label('created_by'),
+            case(
+                (global_list_pin_relation.c.pin_id.is_not(None), True), 
+                else_=False).label('is_global_shared'),
         ).join(
             user, user.c.id == pin.c.created_by
+        ).outerjoin(
+            global_list_pin_relation, global_list_pin_relation.c.pin_id == pin.c.id
         ).where(
             pin.c.deleted_at.is_(None)
         ).order_by(
             pin.c.pin_category.asc(),
             pin.c.pin_name.asc()
+        ).group_by(
+            pin.c.id
         )
 
     # Exec

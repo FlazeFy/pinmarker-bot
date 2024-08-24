@@ -106,3 +106,51 @@ def test_get_pin_by_category_api():
             assert isinstance(dt['pin_call'], str)
         if dt['pin_email'] is not None:
             assert isinstance(dt['pin_email'], str)
+
+# For discord
+def test_get_all_pin_v2_api():
+    response = requests.get(f"{base_url}/api/v2/pin")
+    data = response.json()
+
+    # Check the status code
+    assert response.status_code == 200    
+
+    # Check message key in object body
+    assert 'message' in data
+    assert isinstance(data['message'], str), "The key 'message' should be an string"
+    
+    # Check data key in object body
+    assert 'data' in data
+    assert isinstance(data['data'], object), "The key 'data' should be a object"
+    
+    # Check the data in object
+    for dt in data['data']:
+        assert 'pin_name' in dt
+        assert 'pin_desc' in dt
+        assert 'pin_coordinate' in dt
+        assert 'pin_category' in dt
+        assert 'pin_person' in dt
+        assert 'pin_call' in dt
+        assert 'pin_email' in dt
+        assert 'pin_address' in dt
+        assert 'created_at' in dt
+        assert 'created_by' in dt
+        assert 'is_global_shared' in dt
+        
+        assert isinstance(dt['pin_name'], str)
+        assert isinstance(dt['pin_coordinate'], str)
+        assert isinstance(dt['pin_category'], str)
+        assert isinstance(dt['created_at'], str)
+        assert isinstance(dt['created_by'], str)
+        assert isinstance(dt['is_global_shared'], bool)
+
+        if dt['pin_desc'] is not None:
+            assert isinstance(dt['pin_desc'], str)
+        if dt['pin_person'] is not None:
+            assert isinstance(dt['pin_person'], str)
+        if dt['pin_address'] is not None:
+            assert isinstance(dt['pin_address'], str)
+        if dt['pin_call'] is not None:
+            assert isinstance(dt['pin_call'], str)
+        if dt['pin_email'] is not None:
+            assert isinstance(dt['pin_email'], str)

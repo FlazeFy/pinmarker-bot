@@ -22,6 +22,7 @@ async def api_get_all_pin():
                 "Person in Touch",
                 "Phone",
                 "Email",
+                "Is Global Shared",
                 "Created At",
                 "Created By"
             ])
@@ -36,6 +37,7 @@ async def api_get_all_pin():
                     dt['pin_person'] or '-',
                     dt['pin_call'] or '-',
                     dt['pin_email'] or '-',
+                    dt['is_global_shared'],
                     dt['created_at'],
                     f"@{dt['created_by']}"
                 ])
