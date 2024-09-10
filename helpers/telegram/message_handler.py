@@ -14,7 +14,7 @@ from services.modules.user.user_command import update_sign_out
 from helpers.telegram.repositories.repo_bot_history import api_get_command_history
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
 from helpers.telegram.repositories.repo_track import api_get_last_track
-from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export
+from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export, api_get_nearset_pin
 from helpers.telegram.typography import send_long_message
 from helpers.sqlite.template import post_ai_command
 
@@ -43,7 +43,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 for chunk in message_chunks:
                     await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
             else:
-                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')            
+                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')      
+
+        elif query.data == '1/near':
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Nearest Pin')
+            res, is_success = await api_get_nearset_pin(userId=userId, max_dis=1000)
+            message_chunks = send_long_message(res)
+            keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            for chunk in message_chunks:
+                await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
+            await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
 
         elif query.data == '1/export':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Export pin')
@@ -177,6 +187,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 def main_menu_keyboard():
     keyboard = [
         [InlineKeyboardButton("Show my pin", callback_data='1')],
+        [InlineKeyboardButton("Show nearest pin", callback_data='1/near')],
         [InlineKeyboardButton("Export pin", callback_data='1/export')],
         [InlineKeyboardButton("Show detail pin", callback_data='2')],
         [InlineKeyboardButton("History visit", callback_data='3')],

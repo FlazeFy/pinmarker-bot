@@ -275,6 +275,48 @@ async def get_pin_distance_by_coor(coor:str, userId:str):
         res += '<i>- You have no location saved -</i>'
 
     return res
+    
+async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int):
+    # Query builder
+    query = select(
+        pin.c.pin_name,
+        concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate')
+    ).where(
+        pin.c.created_by == userid
+    )
+
+    #Exec
+    result = con.execute(query)
+    data = result.fetchall()
+    found = False
+    found_list = []
+
+    for idx, dt in enumerate(data, start=1):
+        my_coor = f"{lat},{long}"
+        dis = calculate_distance(my_coor, dt.pin_coordinate)
+        if dis < max_dis:
+            found = True
+            found_list.append({
+                'pin_name': dt.pin_name,
+                'pin_coor': dt.pin_coordinate,
+                'distance': dis,
+            })
+
+    found_list.sort(key=lambda dt: dt['distance'])
+
+    if len(found_list) > 0:
+        return {
+            "data": found_list,
+            "message": "Pin found",
+            "is_found_near" : found,
+            "count": len(found_list)
+        }
+    else:
+        return {
+            "data": None,
+            "message": "Pin not found",
+            "is_found_near" : found,
+        }
 
 async def get_find_all(search:str, type:str):
     res = ''

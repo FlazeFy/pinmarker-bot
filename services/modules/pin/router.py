@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query
+from fastapi import APIRouter, HTTPException, Request
+from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query
 
 router_pin = APIRouter()
 
@@ -32,6 +32,14 @@ async def get_pin_by_category(category: str, id: str):
 async def get_global_list_api(search: str):
     try:
         return await get_global_list_query(search=search)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.post("/api/v1/pin/nearest/{lat}/{long}", response_model=dict)
+async def get_nearest_pin_api(lat: str, long:str, request : Request):
+    try:
+        data = await request.json()
+        return await get_nearest_pin_query(lat=lat, long=long, userid=data.get('id'), max_dis=data.get('max_distance'))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

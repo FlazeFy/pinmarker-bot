@@ -5,9 +5,13 @@ from firebase_admin import storage
 from datetime import datetime
 
 # Query
-async def api_get_all_pin(user_id: str):
+async def api_get_all_pin(user_id: str, max_dis: str):
     try:
-        response = requests.get(f"http://127.0.0.1:8000/api/v1/pin/{user_id}")
+        payload = {
+            "id": user_id,
+            "max_distance": max_dis
+        }
+        response = requests.get(f"http://127.0.0.1:8000/api/v1/pin/nearest/-6.2333934867861975/106.82363788271587",json=payload)
         response.raise_for_status()
         data = response.json()
 
@@ -110,6 +114,35 @@ async def api_get_all_pin_export(user_id: str):
             return list_file, True
         else:
             return "No pin found", False
+    except requests.exceptions.RequestException as e:
+        err_msg = f"Something went wrong: {e}"
+        return err_msg, False
+    except KeyError:
+        err_msg = "Error processing the response"
+        return err_msg, False
+
+async def  api_get_nearset_pin(userId: str, max_dis:int):
+    try:
+        payload = {
+            "id": userId,
+            "max_distance": max_dis
+        }
+        response = requests.post(f"http://127.0.0.1:8000/api/v1/pin/nearest/-6.2333934867861975/106.82363788271587", json=payload)
+        response.raise_for_status()
+        data = response.json()
+        res = ''
+
+        if data['data']:
+            for idx, dt in enumerate(data['data']):
+                res += (
+                    f"<b>Pin Name</b>: {dt['pin_name']}\n"
+                    f"<b>Coordinate</b>: {dt['pin_coor']}\n"
+                    f"<b>Distance</b>: {round(dt['distance'], 2)} m\n"
+                    f"Maps : https://www.google.com/maps/place/{dt['pin_coor']}\n\n"
+                )
+            return res, True
+        else:
+            return "No found nearest", False
     except requests.exceptions.RequestException as e:
         err_msg = f"Something went wrong: {e}"
         return err_msg, False
