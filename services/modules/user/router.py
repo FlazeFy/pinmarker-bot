@@ -18,16 +18,16 @@ async def get_all_user_api():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_user.post("/api/v1/req/register/{email}/{username}", response_model=dict)
-async def post_req_register(email: str, username: str):
+@router_user.post("/api/v1/req/{type}/{email}/{username}", response_model=dict)
+async def post_req_register(type:str, email: str, username: str):
     try:
-        return await post_req_register_command(email=email, username=username)
+        return await post_req_register_command(email=email, username=username, type=type)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_user.post("/api/v1/req/validate/{token}/{username}", response_model=dict)
-async def post_validate_regis(token: str, username: str):
+@router_user.post("/api/v1/req_validate/{type}/{token}/{username}", response_model=dict)
+async def post_validate_regis(type:str,token: str, username: str):
     try:
-        return await post_validate_regis_command(token=token, username=username)
+        return await post_validate_regis_command(token=token, username=username, type=type)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

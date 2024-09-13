@@ -117,11 +117,6 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text=f"Showing stats...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
 
-        elif query.data == '6':
-            keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.edit_message_text(text=f"Preparing field...\n", reply_markup=reply_markup)
-
         elif query.data == '7':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Last Live Tracker Position')
             track_lat, track_long, msg, is_success = await api_get_last_track(user_id=userId)
@@ -194,7 +189,6 @@ def main_menu_keyboard():
         [InlineKeyboardButton("History visit in CSV ", callback_data='3/csv')],
         [InlineKeyboardButton("Dashboard", callback_data='4')],
         [InlineKeyboardButton("Stats", callback_data='5')],
-        [InlineKeyboardButton("Change password", callback_data='6')],
         [InlineKeyboardButton("Last Live Tracker Position", callback_data='7')],
         [InlineKeyboardButton("- Send Feedback -", callback_data='8')],
         [InlineKeyboardButton("- BOT History -", callback_data='9')],
