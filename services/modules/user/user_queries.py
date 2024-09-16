@@ -2,7 +2,7 @@ from services.modules.user.user_model import user
 from services.modules.pin.pin_model import pin
 from services.modules.user.admin_model import admin
 from services.modules.dictionary.model import dictionary
-from configs.configs import con
+from configs.configs import db
 from sqlalchemy import select, and_, func
 from sqlalchemy.sql.functions import coalesce
 
@@ -30,8 +30,9 @@ async def get_check_context_query(type:str, context:str):
             )
 
         # Exec
-        result = con.execute(query)
+        result = db.connect().execute(query)
         data = result.first()
+        db.connect().close()
 
         if data:
             return {
@@ -62,7 +63,7 @@ async def get_profile_by_telegram_id(teleId:str):
     )
 
     # Exec - User
-    result = con.execute(query)
+    result = db.connect().execute(query)
     user_data = result.first()
 
     if user_data:
@@ -86,8 +87,9 @@ async def get_profile_by_telegram_id(teleId:str):
         )
 
         # Exec - Admin
-        result = con.execute(query)
+        result = db.connect().execute(query)
         admin_data = result.first()
+        db.connect().close()
         
         if admin_data:
             return {
@@ -142,8 +144,9 @@ async def get_all_user():
     )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     if len(data) != 0:
         data_list = [dict(row._mapping) for row in data]

@@ -3,7 +3,7 @@ from services.modules.pin.global_list_model import global_list
 from services.modules.pin.global_list_rel_model import global_list_pin_relation
 from services.modules.user.user_model import user
 from services.modules.visit.visit_model import visit
-from configs.configs import con
+from configs.configs import db
 from sqlalchemy import select, and_, func, or_, case
 from sqlalchemy.sql.functions import concat
 from helpers.converter import calculate_distance
@@ -58,8 +58,9 @@ async def get_all_pin(userId:str, platform:str):
         )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     if len(data) != 0:
         data_list = [dict(row._mapping) for row in data]
@@ -106,8 +107,9 @@ async def get_all_pin_export_query(userId:str, platform:str):
         )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     if len(data) != 0:
         data_list = [dict(row._mapping) for row in data]
@@ -140,8 +142,9 @@ async def get_pin_by_name(name:str):
     )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     data_list = [dict(row._mapping) for row in data]
 
@@ -196,8 +199,9 @@ async def get_global_list_query(search:str):
     query = query.order_by(global_list.c.created_at.desc())
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     data_list = [dict(row._mapping) for row in data]
 
@@ -229,8 +233,9 @@ async def get_pin_distance_by_coor(coor:str, userId:str):
     ).limit(10)
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
     res = ''
 
     if data:
@@ -276,18 +281,20 @@ async def get_pin_distance_by_coor(coor:str, userId:str):
 
     return res
     
-async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int):
+async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int,limit:int):
     # Query builder
     query = select(
         pin.c.pin_name,
+        pin.c.pin_category,
         concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate')
     ).where(
         pin.c.created_by == userid
     )
 
     #Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
     found = False
     found_list = []
 
@@ -299,8 +306,12 @@ async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int):
             found_list.append({
                 'pin_name': dt.pin_name,
                 'pin_coor': dt.pin_coordinate,
+                'pin_category': dt.pin_category,
                 'distance': dis,
             })
+
+        if len(found_list) >= limit:
+            break
 
     found_list.sort(key=lambda dt: dt['distance'])
 
@@ -357,12 +368,13 @@ async def get_find_all(search:str, type:str):
         )
 
         # Exec
-        result_cat = con.execute(query_cat)
-        result_pin = con.execute(query_pin)
-        result_person = con.execute(query_person)
+        result_cat = db.connect().execute(query_cat)
+        result_pin = db.connect().execute(query_pin)
+        result_person = db.connect().execute(query_person)
         data_cat = result_cat.fetchall()
         data_pin = result_pin.fetchall()
         data_person = result_person.fetchall()
+        db.connect().close()
 
         if data_cat or data_pin:
             if data_cat:
@@ -423,8 +435,9 @@ async def get_pin_by_category_query(category:str,user_id:str):
     )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     data_list = [dict(row._mapping) for row in data]
 

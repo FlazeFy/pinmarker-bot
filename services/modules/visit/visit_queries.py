@@ -1,6 +1,6 @@
 from services.modules.pin.pin_model import pin
 from services.modules.visit.visit_model import visit
-from configs.configs import con
+from configs.configs import db
 import csv
 from sqlalchemy import select, desc
 import io
@@ -34,8 +34,9 @@ async def get_all_visit_last_day(userId:str, teleId:str):
     )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     timezone = get_user_timezone(socmed_id=teleId, socmed_platform='telegram')
     notestz =""
@@ -92,8 +93,9 @@ async def get_all_visit_csv(platform:str, userId:str, teleId:str):
     )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     if len(data) != 0:
         output = io.StringIO()

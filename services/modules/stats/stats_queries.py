@@ -1,4 +1,4 @@
-from configs.configs import con
+from configs.configs import db
 from sqlalchemy import text
 from sqlalchemy import select, desc, and_
 from datetime import datetime, timedelta
@@ -26,9 +26,10 @@ async def get_stats(userId:str):
         GROUP BY context
         ORDER BY context DESC
     """)
-    result = con.execute(sql_visit_by_month)
+    result = db.connect().execute(sql_visit_by_month)
     data_visit_by_month = [dict(zip(result.keys(), row)) for row in result.fetchall()]
     dt_total_visit_by_month = []
+    db.connect().close()
 
     for m in months:
         for dt in data_visit_by_month:
@@ -121,23 +122,24 @@ async def get_dashboard(userId:str, role:str):
     )
 
     # Exec
-    result_total_marker = con.execute(compiled_sql_total_marker)
+    result_total_marker = db.connect().execute(compiled_sql_total_marker)
     data_total_marker = result_total_marker.first()
 
-    result_total_favorite = con.execute(compiled_sql_total_favorite)
+    result_total_favorite = db.connect().execute(compiled_sql_total_favorite)
     data_total_favorite = result_total_favorite.first()
 
-    result_most_category = con.execute(compiled_sql_most_category)
+    result_most_category = db.connect().execute(compiled_sql_most_category)
     data_most_category = result_most_category.first()
 
-    result_last_added = con.execute(query_last_added)
+    result_last_added = db.connect().execute(query_last_added)
     data_last_added = result_last_added.first()
 
-    result_most_visit = con.execute(compiled_sql_most_visit)
+    result_most_visit = db.connect().execute(compiled_sql_most_visit)
     data_most_visit = result_most_visit.first()
 
-    result_last_visit = con.execute(query_last_visit)
+    result_last_visit = db.connect().execute(query_last_visit)
     data_last_visit = result_last_visit.first()
+    db.connect().close()
 
     data = {
         'total_marker': data_total_marker.total,

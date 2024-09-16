@@ -1,4 +1,4 @@
-from configs.configs import con
+from configs.configs import db
 from sqlalchemy import text
 
 async def get_total_item_by_context(tableName, targetColumn, join, userId):
@@ -15,7 +15,8 @@ async def get_total_item_by_context(tableName, targetColumn, join, userId):
     compiled_sql = text(sql_query)
 
     # Exec
-    result = con.execute(compiled_sql)
+    result = db.connect().execute(compiled_sql)
     data = result.fetchall()
+    db.connect().close()
 
     return data

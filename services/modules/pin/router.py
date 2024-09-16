@@ -39,7 +39,7 @@ async def get_global_list_api(search: str):
 async def get_nearest_pin_api(lat: str, long:str, request : Request):
     try:
         data = await request.json()
-        return await get_nearest_pin_query(lat=lat, long=long, userid=data.get('id'), max_dis=data.get('max_distance'))
+        return await get_nearest_pin_query(lat=lat, long=long, userid=data.get('id'), max_dis=data.get('max_distance'), limit=data.get('limit'))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

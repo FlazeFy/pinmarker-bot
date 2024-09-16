@@ -1,5 +1,5 @@
 from services.modules.feedback.model import feedback
-from configs.configs import con
+from configs.configs import db
 from sqlalchemy import select
     
 async def get_feedback():
@@ -13,8 +13,9 @@ async def get_feedback():
     )
 
     # Exec
-    result = con.execute(query)
+    result = db.connect().execute(query)
     data = result.fetchall()
+    db.connect().close()
 
     data_list = [dict(row._mapping) for row in data]
 
