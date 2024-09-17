@@ -1,7 +1,8 @@
 from configs.configs import db
 from sqlalchemy import text
 from sqlalchemy import select, desc, and_
-from datetime import datetime, timedelta
+from datetime import datetime
+from fastapi.responses import JSONResponse
 
 from services.modules.pin.pin_model import pin
 from services.modules.visit.visit_model import visit
@@ -154,7 +155,10 @@ async def get_dashboard(userId:str, role:str):
             'most_visit': f"({data_most_visit.total if data_most_visit else '-'}) {data_most_visit.context if data_most_visit else '-'}",
         })
 
-    return {
-        "data": data,
-        "message": "Dashboard found",
-    }
+    return JSONResponse(
+        status_code=200, 
+        content={
+            "data": data,
+            "message": "Dashboard found",
+        }
+    )

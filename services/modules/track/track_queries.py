@@ -1,6 +1,7 @@
 from firebase_admin import db
 from datetime import datetime
 from helpers.converter import calculate_distance
+from fastapi.responses import JSONResponse
 
 async def get_last_tracker_position_api(userId:str):
     # Attribute
@@ -13,14 +14,21 @@ async def get_last_tracker_position_api(userId:str):
 
     if data:
         data_values = list(data.values())
-        return {
-            "data": data_values[0],
-            "message": "Last track found",
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_values[0],
+                "message": "Last track found",
+            }
+        )
     else:
-        return {
-            "message": "No Track found",
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data":None,
+                "message": "No Track found",
+            }
+        )
 
 async def get_tracks(userId:str):
     # Attribute
@@ -32,15 +40,22 @@ async def get_tracks(userId:str):
 
     if data:
         data_values = list(data.values())
-        return {
-            "data": data_values,
-            "message": "Track journey found",
-            "count": len(data_values)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_values,
+                "message": "Track journey found",
+                "count": len(data_values)
+            }
+        )
     else:
-        return {
-            "message": "No Track journey found",
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "No Track journey found",
+            }
+        )
     
 async def get_tracks_period(userId: str, start_time: datetime = None, end_time: datetime = None):
     # Attribute
@@ -62,15 +77,22 @@ async def get_tracks_period(userId: str, start_time: datetime = None, end_time: 
     
     if data:
         data_values = list(data.values())
-        return {
-            "data": data_values,
-            "message": "Track journey found",
-            "count": len(data_values)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_values,
+                "message": "Track journey found",
+                "count": len(data_values)
+            }
+        )
     else:
-        return {
-            "message": "No Track journey found",
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "No Track journey found",
+            }
+        )
     
 async def get_total_distance_by_month_query(userId: str, year: int):
     # Attribute
@@ -145,16 +167,23 @@ async def get_total_distance_by_month_query(userId: str, year: int):
             if 'distance' in item:
                 del item['distance']
         
-        return {
-            "data": formatted_data,
-            "data_detail": data_values,
-            "message": "Track journey found",
-            "count": len(data_values)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": formatted_data,
+                "data_detail": data_values,
+                "message": "Track journey found",
+                "count": len(data_values)
+            }
+        )
     else:
-        return {
-            "message": "No Track journey found",
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data":None,
+                "message": "No Track journey found",
+            }
+        )
     
 async def get_total_distance_by_time_query(userId: str, year: int):
     # Attribute
@@ -229,16 +258,23 @@ async def get_total_distance_by_time_query(userId: str, year: int):
             if 'distance' in item:
                 del item['distance']
         
-        return {
-            "data": formatted_data,
-            "data_detail": data_values,
-            "message": "Track journey found",
-            "count": len(data_values)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": formatted_data,
+                "data_detail": data_values,
+                "message": "Track journey found",
+                "count": len(data_values)
+            }
+        )
     else:
-        return {
-            "message": "No Track journey found",
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "No Track journey found",
+            }
+        )
 
 async def get_activity_around_coordinate_query(userId: str, coor: str):
     # Attribute
@@ -288,12 +324,19 @@ async def get_activity_around_coordinate_query(userId: str, coor: str):
             if 'coordinate_track' in item:
                 del item['coordinate_track']
         
-        return {
-            "data": final_data,
-            "message": "Track activity found",
-            "count": len(final_data)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": final_data,
+                "message": "Track activity found",
+                "count": len(final_data)
+            }
+        )
     else:
-        return {
-            "message": "No Track activity found",
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "No Track activity found",
+            }
+        )

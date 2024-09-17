@@ -5,53 +5,405 @@ router_pin = APIRouter()
 
 # For Telegram, Web, and Mobile
 # GET Query
-@router_pin.get("/api/v1/pin/{id}", response_model=dict)
-async def get_all_pin_api(id: str):
+@router_pin.get("/api/v1/pin/{user_id}", response_model=dict, 
+    summary="Get All Pin - for User (MySql)",
+    description="This request is used to get pin based on given `user_id`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all pin by user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "pin_name": "Warteg D Amertha",
+                                "pin_desc": "Warteg murmer langganan depan gapura D Amertha. Parkir di depan gapura. Minggu tutup",
+                                "pin_coordinate": "-6.977430240726936,107.65112376402404",
+                                "pin_category": "Restaurant",
+                                "pin_person": "Bude",
+                                "pin_address": "D Amertha Residence",
+                                "created_at": "2024-03-18T06:47:27"
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found for given user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_all_pin_api(user_id: str):
     try:
-        return await get_all_pin(userId=id, platform='telegram')
+        return await get_all_pin(userId=user_id, platform='telegram')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_pin.get("/api/v1/pin_export/{id}", response_model=dict)
-async def get_all_pin_export_api(id: str):
+@router_pin.get("/api/v1/pin_export/{user_id}", response_model=dict, 
+    summary="Get All Pin - Export Format (MySql)",
+    description="This request is used to get pin based on given `user_id` and `` but the result is designed for import format (CSV) in PinMarker Web",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all pin by user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "pin_name": "123123",
+                                "pin_lat": "-6.2028299038609305",
+                                "pin_long": "106.90157343394769"
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found for given user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_all_pin_export_api(user_id: str):
     try:
-        return await get_all_pin_export_query(userId=id, platform='telegram')
+        return await get_all_pin_export_query(userId=user_id, platform='telegram')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_pin.get("/api/v1/pin/{category}/{id}", response_model=dict)
+@router_pin.get("/api/v1/pin/{category}/{user_id}", response_model=dict, 
+    summary="Get Pin By Category (MySql)",
+    description="This request is used to get pin based on given `user_id` and `category`. The category is separated by comma",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all pin by user id and categories",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "pin_name": "Warteg D Amertha",
+                                "pin_desc": "Warteg murmer langganan depan gapura D Amertha. Parkir di depan gapura. Minggu tutup",
+                                "pin_lat": "-2.5959778412319934",
+                                "pin_long": "140.6414633989334",
+                                "pin_person": "Bude",
+                                "pin_address": "D Amertha Residence",
+                                "pin_call": "123123",
+                                "pin_email": "warteg@gmail.com",
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found for given user id and categories",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
 # category can be multiple and separate by comma
 # ex : cafe,restaurant
-async def get_pin_by_category(category: str, id: str):
+async def get_pin_by_category(category: str, user_id: str):
     try:
-        return await get_pin_by_category_query(category=category, user_id=id)
+        return await get_pin_by_category_query(category=category, user_id=user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_pin.get("/api/v1/pin_global/{search}", response_model=dict)
+@router_pin.get("/api/v1/pin_global/{search}", response_model=dict, 
+    summary="Get Global Pin (MySql)",
+    description="This request is used to get list of pin based on given `search` key. The search key can be `list_name`, `pin_name`, `list_tag`, and the owner (`username`)",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all global pin by search key",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "id": "e396661c-5797-11ef-a5a5-3216422910e8",
+                                "pin_list": "pinpin,Roti Romi,PLANET CELL,PARMAN CELL,reivan cell,My Kost,234 CELL 2,Warteg D Amertha,SULTAN CELL 1,GOES CELL",
+                                "total": 10,
+                                "list_name": "Dessert Trips",
+                                "list_desc": "push glukosa",
+                                "list_tag": [
+                                    {
+                                        "tag_name": "Weekend"
+                                    },
+                                    {
+                                        "tag_name": "Dessert"
+                                    },
+                                    {
+                                        "tag_name": "Jakarta"
+                                    }
+                                ],
+                                "created_at": "2024-08-11T06:11:30",
+                                "created_by": "flazefy"
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Global Pin not found for given search key",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
 async def get_global_list_api(search: str):
     try:
         return await get_global_list_query(search=search)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_pin.post("/api/v1/pin/nearest/{lat}/{long}", response_model=dict)
+@router_pin.post("/api/v1/pin/nearest/{lat}/{long}", response_model=dict, 
+    summary="Get Nearest Pin (MySql)",
+    description="This request is used to get nearest pin based on given `lat`, `long`, `user_id`, `max_distance` from the coordinate, and `limit`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all pin by lat, long, user id, max distance from the coordinate, and limit",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "pin_name": "My Office - AGIT x TSEL",
+                                "pin_coor": "-6.2302963368641056,106.81831151247025",
+                                "pin_category": "Office",
+                                "distance": 682.0905337122441
+                            }
+                        ],
+                        "message": "Pin found",
+                        "is_found_near": True,
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found for given lat, long, user id, max distance from the coordinate, and limit",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "is_found_near": False,
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
 async def get_nearest_pin_api(lat: str, long:str, request : Request):
     try:
         data = await request.json()
-        return await get_nearest_pin_query(lat=lat, long=long, userid=data.get('id'), max_dis=data.get('max_distance'), limit=data.get('limit'))
+        return await get_nearest_pin_query(lat=lat, long=long, userid=data.get('user_id'), max_dis=data.get('max_distance'), limit=data.get('limit'))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 # For Discord
-@router_pin.get("/api/v2/pin", response_model=dict)
+@router_pin.get("/api/v2/pin", response_model=dict, 
+    summary="Get All Pin - for Admin (MySql)",
+    description="This request is used to get all pin",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all pin",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "pin_name": "Cafe B",
+                                "pin_desc": "Lorem Ipsum",
+                                "pin_coordinate": "- hidden -",
+                                "pin_category": "Cafe",
+                                "pin_person": "123123",
+                                "pin_address": "- hidden -",
+                                "pin_call": "08123456789",
+                                "pin_email": "flazen.edu@gmail.com",
+                                "created_at": "2024-07-15T00:12:59",
+                                "created_by": "flazefy",
+                                "is_global_shared": False
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
 async def get_all_pin_api():
     try:
         return await get_all_pin(userId=None, platform='discord')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_pin.get("/api/v2/pin_export", response_model=dict)
+@router_pin.get("/api/v2/pin_export", response_model=dict, 
+    summary="Get All Pin - for Admin Export Format (MySql)",
+    description="This request is used to get all pin but the result is designed for import format (CSV) in PinMarker Web",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all pin by user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "pin_name": "Cafe A",
+                                "pin_lat": "-6.2028299038609305",
+                                "pin_long": "106.90157343394769",
+                                "created_at": "2024-07-15T00:12:59",
+                                "created_by": "flazefy"
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
 async def get_all_pin_export_api():
     try:
         return await get_all_pin_export_query(userId=None, platform='discord')

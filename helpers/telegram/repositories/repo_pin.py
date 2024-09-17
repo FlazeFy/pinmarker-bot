@@ -5,7 +5,7 @@ from firebase_admin import storage
 from datetime import datetime
 
 # Query
-async def api_get_all_pin(user_id: str, max_dis: str):
+async def api_get_all_pin(user_id: str, max_dis: int):
     try:
         payload = {
             "id": user_id,
@@ -60,13 +60,13 @@ async def api_get_all_pin(user_id: str, max_dis: str):
                 res = "\n".join([f"Name: {item['pin_name']}\nDescription: {item['pin_desc']or '-'}\nCoordinate: {item['pin_coordinate']}\nAddress: {item['pin_address']or '-'}\nCategory: {item['pin_category']}\nPerson in Touch: {item['pin_person']or '-'}\nCreated At: {item['created_at']or '-'}\n" for item in data['data']])
                 return res, 'text', True
         else:
-            return "No pin found", False
+            return "No pin found", "text", False
     except requests.exceptions.RequestException as e:
         err_msg = f"Something went wrong: {e}"
-        return err_msg, False
+        return err_msg, "text", False
     except KeyError:
         err_msg = "Error processing the response"
-        return err_msg, False
+        return err_msg, "text", False
     
 async def api_get_all_pin_export(user_id: str):
     try:

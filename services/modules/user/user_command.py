@@ -2,7 +2,8 @@ from services.modules.user.user_model import user
 from services.modules.user.admin_model import admin
 from configs.configs import db
 from sqlalchemy import update
-    
+from fastapi.responses import JSONResponse
+
 async def update_sign_out(userId:str, teleId:str, role:str):
     try: 
         # Query builder - User
@@ -20,10 +21,13 @@ async def update_sign_out(userId:str, teleId:str, role:str):
         db.connect().commit()
         
         if result.rowcount > 0:
-            return {
-                "is_updated": True,
-                "message": "User successfully sign out"
-            }
+            return JSONResponse(
+                status_code=201, 
+                content={
+                    "is_updated": True,
+                    "message": "User successfully sign out"
+                }
+            )
         else:
             # Query builder - Admin
             stmt = update(admin
@@ -41,15 +45,21 @@ async def update_sign_out(userId:str, teleId:str, role:str):
             db.connect().close()
 
             if result.rowcount > 0:
-                return {
-                    "is_updated": True,
-                    "message": "Admin successfully sign out"
-                }
+                return JSONResponse(
+                    status_code=201, 
+                    content={
+                            "is_updated": True,
+                            "message": "Admin successfully sign out"
+                        }
+                )
             else:
-                return {
-                    "is_updated": False,
-                    "message": "No user found with the provided Telegram Id"
-                }
+                return JSONResponse(
+                    status_code=404, 
+                    content={
+                        "is_updated": False,
+                        "message": "No user found with the provided Telegram Id"
+                    }
+                )
     except Exception as e:
         db.connect().rollback()
         raise

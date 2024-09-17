@@ -4,6 +4,7 @@ from sqlalchemy import insert, func
 from helpers.generator import get_UUID
 from fastapi import HTTPException
 from datetime import datetime
+from fastapi.responses import JSONResponse
 
 async def post_feedback(data:dict):
     try:
@@ -30,17 +31,23 @@ async def post_feedback(data:dict):
         db.connect().close()
 
         if result.rowcount > 0:
-            return {
-                "message": "Feedback inserted",
-                "data": data,
-                "count": result.rowcount
-            }
+            return JSONResponse(
+                status_code=201, 
+                content={
+                    "message": "Feedback inserted",
+                    "data": data,
+                    "count": result.rowcount
+                }
+            )
         else:
-            return {
-                "data": None,
-                "message": "Feedback failed to insert",
-                "count": 0
-            }
+            return JSONResponse(
+                status_code=400, 
+                content={
+                    "data": None,
+                    "message": "Feedback failed to insert",
+                    "count": 0
+                }
+            )
     except Exception as e:
         db.connect().rollback()
         raise

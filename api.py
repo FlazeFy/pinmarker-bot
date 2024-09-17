@@ -35,6 +35,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+ 
+# Swagger
+app = FastAPI(
+    title="PinMarker API",
+    description="This is an Rest API documentation for all PinMarker request that used in PinMarker Mobile, PinMarker Telegram BOT, PinMarker Discord BOT, and PinMarker Web. This Backend environment was built using MySQL, Firebase Realtime, and SQFlite for the database. And was hosted in CPanel.",
+    version="1.0.0"
+)
 
 # Router
 app.include_router(router_track)

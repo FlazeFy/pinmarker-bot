@@ -5,6 +5,7 @@ from services.modules.dictionary.model import dictionary
 from configs.configs import db
 from sqlalchemy import select, and_, func
 from sqlalchemy.sql.functions import coalesce
+from fastapi.responses import JSONResponse
 
 async def get_check_context_query(type:str, context:str):
     if type == "email":
@@ -35,19 +36,28 @@ async def get_check_context_query(type:str, context:str):
         db.connect().close()
 
         if data:
-            return {
-                "is_found": True,
-                "message": f"{type} not available",
-            }
+            return JSONResponse(
+                status_code=200, 
+                content={
+                    "is_found": True,
+                    "message": f"{type} not available",
+                }
+            )
         else:
-            return {
-                "is_found": False,
-                "message": f"{type} available",
-            }
+            return JSONResponse(
+                status_code=404, 
+                content={
+                    "is_found": False,
+                    "message": f"{type} available",
+                }
+            )
     else:
-        return {
-            "message": f"{type} invalid, total character must more than {minChar} and below {maxChar}",
-        }
+        return JSONResponse(
+            status_code=422, 
+            content={
+                "message": f"{type} invalid, total character must more than {minChar} and below {maxChar}",
+            }
+        )
     
 async def get_profile_by_telegram_id(teleId:str):
     # Query builder - User
@@ -67,12 +77,15 @@ async def get_profile_by_telegram_id(teleId:str):
     user_data = result.first()
 
     if user_data:
-        return {
-            "is_found": True,
-            "role":"user",
-            "data": user_data,
-            "message":"User found"
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "is_found": True,
+                "role":"user",
+                "data": user_data,
+                "message":"User found"
+            }
+        )
     else:
         # Query builder - Admin
         query = select(
@@ -92,19 +105,25 @@ async def get_profile_by_telegram_id(teleId:str):
         db.connect().close()
         
         if admin_data:
-            return {
-                "is_found": True,
-                "role":"admin",
-                "data": admin_data,
-                "message":"Admin found"
-            }
+            return JSONResponse(
+                status_code=200, 
+                content={
+                    "is_found": True,
+                    "role":"admin",
+                    "data": admin_data,
+                    "message":"Admin found"
+                }
+            )
         else: 
-            return {
-                "is_found": False,
-                "role": None,
-                "data": None,
-                "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
-            }
+            return JSONResponse(
+                status_code=404, 
+                content={
+                    "is_found": False,
+                    "role": None,
+                    "data": None,
+                    "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
+                }
+            )
         
 async def get_all_user():
     # Query builder
@@ -150,16 +169,22 @@ async def get_all_user():
 
     if len(data) != 0:
         data_list = [dict(row._mapping) for row in data]
-        return {
-            "data": data_list,
-            "message": "Pin found",
-            "count": len(data)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
     else:
-        return {
-            "data": None,
-            "message": "Pin not found",
-            "count": 0
-        }
-       
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )
+        
         

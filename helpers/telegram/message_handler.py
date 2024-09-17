@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import dbtextTypes
+from telegram.ext import ContextTypes
 import io
 import os
 
@@ -33,7 +33,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if query.data == '1':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Show my pin')
-            res, type, is_success = await api_get_all_pin(user_id=userId, max_dis="5000")
+            res, type, is_success = await api_get_all_pin(user_id=userId, max_dis=5000)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             if type == 'file':

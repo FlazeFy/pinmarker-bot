@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import select, and_
 from telegram import Bot
 from helpers.telegram.manual import send_tele_chat
+from fastapi.responses import JSONResponse
 
 async def post_req_register_command(email:str, username:str, type:str):
     try: 
@@ -24,10 +25,13 @@ async def post_req_register_command(email:str, username:str, type:str):
         data = result.first()
 
         if data is not None:
-            return {
-                "is_sended": False,
-                "message": "Generate token failed. There's still a unvalidated request"
-            }
+            return JSONResponse(
+                status_code=409, 
+                content={
+                    "is_sended": False,
+                    "message": "Generate token failed. There's still a unvalidated request"
+                }
+            )
         else:
             id = get_UUID()
             token = get_token_validation(length=6)
@@ -51,10 +55,13 @@ async def post_req_register_command(email:str, username:str, type:str):
                     body=message_body,
                     to_email=email
                 )
-                return {
-                    "is_sended": True,
-                    "message": "Token register is sended to your email!"
-                }
+                return JSONResponse(
+                    status_code=201, 
+                    content={
+                        "is_sended": True,
+                        "message": "Token register is sended to your email!"
+                    }
+                )
             elif type == 'forget':
                 message_body = f"Hello <b>{username}</b>, Here's the token for your password recovery. Just copy this <b>{token}</b> and paste it to validation section in your forget password page.\n\nThank You!"
                 await send_email(
@@ -77,16 +84,22 @@ async def post_req_register_command(email:str, username:str, type:str):
                 if data.telegram_user_id:
                     await send_tele_chat(tele_id=data.telegram_user_id,msg=message_body)
 
-                return {
-                    "is_sended": True,
-                    "message": "Token password recovery is sended to your email!"
-                }
+                return JSONResponse(
+                    status_code=201, 
+                    content={
+                        "is_sended": True,
+                        "message": "Token password recovery is sended to your email!"
+                    }
+                )
             else:
                 db.connect().close()
-                return {
-                    "is_sended": False,
-                    "message": "Type request not valid"
-                }
+                return JSONResponse(
+                    status_code=422, 
+                    content={
+                        "is_sended": False,
+                        "message": "Type request not valid"
+                    }
+                )
     except Exception as e:
         db.connect().rollback()
         raise
@@ -117,21 +130,30 @@ async def post_validate_regis_command(token:str, username:str, type:str):
             db.connect().close()
 
             if total.rowcount > 0:
-                return {
-                    "is_validated": True,
-                    "message": "Token is validated!"
-                }
+                return JSONResponse(
+                    status_code=201, 
+                    content={
+                        "is_validated": True,
+                        "message": "Token is validated!"
+                    }
+                )
             else:
-                return {
+                return JSONResponse(
+                    status_code=404, 
+                    content={
+                        "is_validated": False,
+                        "message": "Token not found!"
+                    }
+                )
+        else:
+            db.connect().close()
+            return JSONResponse(
+                status_code=404, 
+                content={
                     "is_validated": False,
                     "message": "Token not found!"
                 }
-        else:
-            db.connect().close()
-            return {
-                "is_validated": False,
-                "message": "Token not found!"
-            }
+            )
     except Exception as e:
         db.connect().rollback()
         raise

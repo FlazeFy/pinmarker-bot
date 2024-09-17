@@ -7,6 +7,7 @@ from configs.configs import db
 from sqlalchemy import select, and_, func, or_, case
 from sqlalchemy.sql.functions import concat
 from helpers.converter import calculate_distance
+from fastapi.responses import JSONResponse
 
 async def get_all_pin(userId:str, platform:str):
     # Query builder
@@ -64,17 +65,30 @@ async def get_all_pin(userId:str, platform:str):
 
     if len(data) != 0:
         data_list = [dict(row._mapping) for row in data]
-        return {
-            "data": data_list,
-            "message": "Pin found",
-            "count": len(data)
-        }
+        data_list_final = []
+        for row in data:
+            data_list = dict(row._mapping)
+            data_list['created_at'] = data_list['created_at'].isoformat() 
+            data_list_final.append(data_list)
+        data_list = data_list_final
+
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
     else:
-        return {
-            "data": None,
-            "message": "Pin not found",
-            "count": 0
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )
     
 async def get_all_pin_export_query(userId:str, platform:str):
     # Query builder
@@ -113,17 +127,32 @@ async def get_all_pin_export_query(userId:str, platform:str):
 
     if len(data) != 0:
         data_list = [dict(row._mapping) for row in data]
-        return {
-            "data": data_list,
-            "message": "Pin found",
-            "count": len(data)
-        }
+
+        if platform != 'telegram':
+            data_list_final = []
+            for row in data:
+                data_list = dict(row._mapping)
+                data_list['created_at'] = data_list['created_at'].isoformat() 
+                data_list_final.append(data_list)
+            data_list = data_list_final
+
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
     else:
-        return {
-            "data": None,
-            "message": "Pin not found",
-            "count": 0
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )
     
 async def get_pin_by_name(name:str):
     # Query builder
@@ -149,17 +178,23 @@ async def get_pin_by_name(name:str):
     data_list = [dict(row._mapping) for row in data]
 
     if len(data) > 0:
-        return {
-            "data": data_list,
-            "message": "Pin found",
-            "count": len(data)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
     else:
-        return {
-            "data": None,
-            "message": "Pin not found",
-            "count": 0
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )
     
 async def get_global_list_query(search:str):
     # Query builder
@@ -204,19 +239,30 @@ async def get_global_list_query(search:str):
     db.connect().close()
 
     data_list = [dict(row._mapping) for row in data]
+    data_list_final = []
+    for row in data:
+        data_list = dict(row._mapping)
+        data_list['created_at'] = data_list['created_at'].isoformat() 
+        data_list_final.append(data_list)
 
     if len(data) > 0:
-        return {
-            "data": data_list,
-            "message": "Pin found",
-            "count": len(data)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
     else:
-        return {
-            "data": None,
-            "message": "Pin not found",
-            "count": 0
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )
 
 async def get_pin_distance_by_coor(coor:str, userId:str):
     # Query builder
@@ -316,18 +362,25 @@ async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int,limit
     found_list.sort(key=lambda dt: dt['distance'])
 
     if len(found_list) > 0:
-        return {
-            "data": found_list,
-            "message": "Pin found",
-            "is_found_near" : found,
-            "count": len(found_list)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": found_list,
+                "message": "Pin found",
+                "is_found_near": found,
+                "count": len(found_list)
+            }
+        )
     else:
-        return {
-            "data": None,
-            "message": "Pin not found",
-            "is_found_near" : found,
-        }
+        return JSONResponse(
+            status_code=404,
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "is_found_near": found,
+                "count": 0
+            }
+        )
 
 async def get_find_all(search:str, type:str):
     res = ''
@@ -442,13 +495,20 @@ async def get_pin_by_category_query(category:str,user_id:str):
     data_list = [dict(row._mapping) for row in data]
 
     if len(data) > 0:
-        return {
-            "data": data_list,
-            "message": "Pin found",
-            "count": len(data)
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
     else:
-        return {
-            "data": None,
-            "message": "Pin not found",
-        }
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )
