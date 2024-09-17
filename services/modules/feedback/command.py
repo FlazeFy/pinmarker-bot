@@ -11,7 +11,7 @@ async def post_feedback(data:dict):
         # Query builder
         feedback_rate = data.get('feedback_rate')
         feedback_body = data.get('feedback_body')
-        created_at = datetime.utcnow()  # Use the current time
+        created_at = datetime.utcnow()
 
         if not isinstance(feedback_rate, int) or feedback_rate < 1 or feedback_rate > 5:
             raise HTTPException(status_code=400, detail="Invalid feedback_rate")

@@ -9,6 +9,7 @@ router_feedback = APIRouter()
     summary="Send Feedback (MySql)",
     description="This request is used to send feedback about the apps anonymously",
     tags=["Feedback"],
+    status_code=201,
     responses={
         201: {
             "description": "Successful send the feedback",

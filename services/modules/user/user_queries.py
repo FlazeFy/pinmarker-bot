@@ -37,7 +37,7 @@ async def get_check_context_query(type:str, context:str):
 
         if data:
             return JSONResponse(
-                status_code=200, 
+                status_code=409, 
                 content={
                     "is_found": True,
                     "message": f"{type} not available",
@@ -45,7 +45,7 @@ async def get_check_context_query(type:str, context:str):
             )
         else:
             return JSONResponse(
-                status_code=404, 
+                status_code=200, 
                 content={
                     "is_found": False,
                     "message": f"{type} available",
@@ -55,6 +55,7 @@ async def get_check_context_query(type:str, context:str):
         return JSONResponse(
             status_code=422, 
             content={
+                "is_found": None,
                 "message": f"{type} invalid, total character must more than {minChar} and below {maxChar}",
             }
         )
@@ -169,11 +170,18 @@ async def get_all_user():
 
     if len(data) != 0:
         data_list = [dict(row._mapping) for row in data]
+        data_list_final = []
+        for row in data:
+            data_list = dict(row._mapping)
+            data_list['created_at'] = data_list['created_at'].isoformat() 
+            data_list_final.append(data_list)
+        data_list = data_list_final
+        
         return JSONResponse(
             status_code=200, 
             content={
                 "data": data_list,
-                "message": "Pin found",
+                "message": "User found",
                 "count": len(data)
             }
         )
@@ -182,7 +190,7 @@ async def get_all_user():
             status_code=404, 
             content={
                 "data": None,
-                "message": "Pin not found",
+                "message": "User not found",
                 "count": 0
             }
         )

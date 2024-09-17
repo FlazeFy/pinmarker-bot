@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Path
 from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query
+from helpers.docs import generate_dummy
 
 router_pin = APIRouter()
 
@@ -55,7 +56,7 @@ router_pin = APIRouter()
             }
         }
     })
-async def get_all_pin_api(user_id: str):
+async def get_all_pin_api(user_id: str= Path(..., example=generate_dummy(type='user_id'))):
     try:
         return await get_all_pin(userId=user_id, platform='telegram')
     except Exception as e:
@@ -107,13 +108,13 @@ async def get_all_pin_api(user_id: str):
             }
         }
     })
-async def get_all_pin_export_api(user_id: str):
+async def get_all_pin_export_api(user_id: str= Path(..., example=generate_dummy(type='user_id'))):
     try:
         return await get_all_pin_export_query(userId=user_id, platform='telegram')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_pin.get("/api/v1/pin/{category}/{user_id}", response_model=dict, 
+@router_pin.get("/api/v1/pin/{pin_category}/{user_id}", response_model=dict, 
     summary="Get Pin By Category (MySql)",
     description="This request is used to get pin based on given `user_id` and `category`. The category is separated by comma",
     tags=["Pin"],
@@ -166,9 +167,9 @@ async def get_all_pin_export_api(user_id: str):
     })
 # category can be multiple and separate by comma
 # ex : cafe,restaurant
-async def get_pin_by_category(category: str, user_id: str):
+async def get_pin_by_category(pin_category: str = Path(..., example=generate_dummy(type='pin_category')), user_id: str = Path(..., example=generate_dummy(type='user_id'))):
     try:
-        return await get_pin_by_category_query(category=category, user_id=user_id)
+        return await get_pin_by_category_query(category=pin_category, user_id=user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
@@ -233,7 +234,7 @@ async def get_pin_by_category(category: str, user_id: str):
             }
         }
     })
-async def get_global_list_api(search: str):
+async def get_global_list_api(search: str = Path(..., example=generate_dummy(type='search'))):
     try:
         return await get_global_list_query(search=search)
     except Exception as e:
@@ -288,7 +289,11 @@ async def get_global_list_api(search: str):
             }
         }
     })
-async def get_nearest_pin_api(lat: str, long:str, request : Request):
+async def get_nearest_pin_api(
+        request : Request,
+        lat: str = Path(..., example=generate_dummy(type='lat')), 
+        long:str = Path(..., example=generate_dummy(type='long')), 
+    ):
     try:
         data = await request.json()
         return await get_nearest_pin_query(lat=lat, long=long, userid=data.get('user_id'), max_dis=data.get('max_distance'), limit=data.get('limit'))

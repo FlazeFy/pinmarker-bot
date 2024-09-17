@@ -2,7 +2,6 @@ from services.modules.pin.pin_model import pin
 from services.modules.pin.global_list_model import global_list
 from services.modules.pin.global_list_rel_model import global_list_pin_relation
 from services.modules.user.user_model import user
-from services.modules.visit.visit_model import visit
 from configs.configs import db
 from sqlalchemy import select, and_, func, or_, case
 from sqlalchemy.sql.functions import concat

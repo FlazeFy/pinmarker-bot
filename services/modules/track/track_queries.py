@@ -54,6 +54,7 @@ async def get_tracks(userId:str):
             content={
                 "data": None,
                 "message": "No Track journey found",
+                "count":0
             }
         )
     
@@ -78,7 +79,7 @@ async def get_tracks_period(userId: str, start_time: datetime = None, end_time: 
     if data:
         data_values = list(data.values())
         return JSONResponse(
-            status_code=200, 
+            status_code=201, 
             content={
                 "data": data_values,
                 "message": "Track journey found",
@@ -91,6 +92,7 @@ async def get_tracks_period(userId: str, start_time: datetime = None, end_time: 
             content={
                 "data": None,
                 "message": "No Track journey found",
+                "count": 0
             }
         )
     
@@ -181,7 +183,9 @@ async def get_total_distance_by_month_query(userId: str, year: int):
             status_code=404, 
             content={
                 "data":None,
+                "data_detail":None,
                 "message": "No Track journey found",
+                "count":0
             }
         )
     
@@ -272,7 +276,9 @@ async def get_total_distance_by_time_query(userId: str, year: int):
             status_code=404, 
             content={
                 "data": None,
+                "data_detail": None,
                 "message": "No Track journey found",
+                "count": 0
             }
         )
 
@@ -290,8 +296,7 @@ async def get_activity_around_coordinate_query(userId: str, coor: str):
         
         # Column builder
         for item in data_values:
-            created_at = datetime.fromisoformat(item['created_at'])
-            item['date'] = created_at.date()
+            item['date'] = item['created_at']
             if 'battery_indicator' in item:
                 del item['battery_indicator']
             if 'created_by' in item:
@@ -338,5 +343,6 @@ async def get_activity_around_coordinate_query(userId: str, coor: str):
             content={
                 "data": None,
                 "message": "No Track activity found",
+                "count":0
             }
         )

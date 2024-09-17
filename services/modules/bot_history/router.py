@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Path
 from services.modules.bot_history.queries import get_bot_history
+from helpers.docs import generate_dummy
 
 router_bot_history = APIRouter()
 
@@ -49,7 +50,7 @@ router_bot_history = APIRouter()
             }
         }
     })
-async def get_bot_history_api(socmed_id: str):
+async def get_bot_history_api(socmed_id: str = Path(..., example=generate_dummy(type='socmed_id'))):
     try:
         return await get_bot_history(socmed_id=socmed_id)
     except Exception as e:
