@@ -2,7 +2,17 @@ from fastapi import APIRouter, HTTPException, Path
 from services.modules.user.user_queries import get_check_context_query, get_all_user
 from services.modules.user.validate_request_commands import post_req_register_command, post_validate_regis_command
 from helpers.docs import generate_dummy
+from enum import Enum
+
 router_user = APIRouter()
+
+class TypeEnumToken(str, Enum):
+    register = "register"
+    forget = "forget"
+
+class TypeEnumUserUnique(str, Enum):
+    email = "email"
+    username = "username"
 
 # POST Query
 @router_user.get("/api/v1/user/check/{type}/{context}", response_model=dict, 
@@ -54,7 +64,7 @@ router_user = APIRouter()
             }
         }
     })
-async def get_check_context(type: str = Path(..., example='username'), context: str = Path(..., example=generate_dummy(type='username'))):
+async def get_check_context(type: TypeEnumUserUnique = Path(..., example="username"), context: str = Path(..., example=generate_dummy(type='username'))):
     try:
         return await get_check_context_query(type=type, context=context)
     except Exception as e:
@@ -167,7 +177,7 @@ async def get_all_user_api():
             }
         }
     })
-async def post_req_register(type:str = Path(..., example='register'), email: str = Path(..., example=generate_dummy(type='email')), username: str = Path(..., example=generate_dummy(type='username'))):
+async def post_req_register(type:TypeEnumToken = Path(..., example="register"), email: str = Path(..., example=generate_dummy(type='email'), max_length=255, min_length=10), username: str = Path(..., example=generate_dummy(type='username'), max_length=36, min_length=2)):
     try:
         return await post_req_register_command(email=email, username=username, type=type)
     except Exception as e:
@@ -212,7 +222,7 @@ async def post_req_register(type:str = Path(..., example='register'), email: str
             }
         }
     })
-async def post_validate_regis(type:str = Path(..., example='register'),token: str = Path(..., example=generate_dummy(type='token')), username: str = Path(..., example=generate_dummy(type='username'))):
+async def post_validate_regis(type:TypeEnumToken = Path(..., example="register"),token: str = Path(..., example=generate_dummy(type='token'),max_length=6, min_length=6), username: str = Path(..., example=generate_dummy(type='username'), max_length=36, min_length=2)):
     try:
         return await post_validate_regis_command(token=token, username=username, type=type)
     except Exception as e:

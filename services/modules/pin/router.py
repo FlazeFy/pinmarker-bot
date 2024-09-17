@@ -56,7 +56,7 @@ router_pin = APIRouter()
             }
         }
     })
-async def get_all_pin_api(user_id: str= Path(..., example=generate_dummy(type='user_id'))):
+async def get_all_pin_api(user_id: str= Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_all_pin(userId=user_id, platform='telegram')
     except Exception as e:
@@ -108,7 +108,7 @@ async def get_all_pin_api(user_id: str= Path(..., example=generate_dummy(type='u
             }
         }
     })
-async def get_all_pin_export_api(user_id: str= Path(..., example=generate_dummy(type='user_id'))):
+async def get_all_pin_export_api(user_id: str= Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_all_pin_export_query(userId=user_id, platform='telegram')
     except Exception as e:
@@ -167,7 +167,7 @@ async def get_all_pin_export_api(user_id: str= Path(..., example=generate_dummy(
     })
 # category can be multiple and separate by comma
 # ex : cafe,restaurant
-async def get_pin_by_category(pin_category: str = Path(..., example=generate_dummy(type='pin_category')), user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_pin_by_category(pin_category: str = Path(..., example=generate_dummy(type='pin_category')), user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_pin_by_category_query(category=pin_category, user_id=user_id)
     except Exception as e:
@@ -291,8 +291,8 @@ async def get_global_list_api(search: str = Path(..., example=generate_dummy(typ
     })
 async def get_nearest_pin_api(
         request : Request,
-        lat: str = Path(..., example=generate_dummy(type='lat')), 
-        long:str = Path(..., example=generate_dummy(type='long')), 
+        lat: str = Path(..., example=generate_dummy(type='lat'), max_length=36, min_length=4), 
+        long:str = Path(..., example=generate_dummy(type='long'), max_length=37, min_length=5), 
     ):
     try:
         data = await request.json()

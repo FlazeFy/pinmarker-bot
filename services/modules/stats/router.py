@@ -3,8 +3,13 @@ from services.modules.stats.stats_queries import get_dashboard
 from services.modules.stats.template import get_total_item_by_context
 from fastapi.responses import JSONResponse
 from helpers.docs import generate_dummy
+from enum import Enum
 
 router_stats = APIRouter()
+
+class TypeEnumRole(str, Enum):
+    admin = "admin"
+    user = "user"
 
 # GET Query
 @router_stats.get("/api/v1/stats/dashboard/{user_id}/{role}", response_model=dict, 
@@ -41,7 +46,7 @@ router_stats = APIRouter()
             }
         }
     })
-async def get_dashboard_route(user_id: str = Path(..., example=generate_dummy(type='user_id')), role:str = Path(..., example='user')):
+async def get_dashboard_route(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36), role:TypeEnumRole = Path(..., example="user")):
     try:
         return await get_dashboard(userId=user_id, role=role)
     except Exception as e:
@@ -92,7 +97,7 @@ async def get_dashboard_route(user_id: str = Path(..., example=generate_dummy(ty
             }
         }
     })
-async def get_total_pin_by_category(user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_total_pin_by_category(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         data = await get_total_item_by_context(tableName="pin", join=None, targetColumn="pin_category", userId=user_id)
         if len(data) != 0:
@@ -162,7 +167,7 @@ async def get_total_pin_by_category(user_id: str = Path(..., example=generate_du
             }
         }
     })
-async def get_total_visit_by_category(user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_total_visit_by_category(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         data = await get_total_item_by_context(tableName="visit", join="pin on pin.id = visit.pin_id", targetColumn="pin_category", userId=user_id)
         if len(data) != 0:
@@ -232,7 +237,7 @@ async def get_total_visit_by_category(user_id: str = Path(..., example=generate_
             }
         }
     })
-async def get_total_gallery_by_pin(user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_total_gallery_by_pin(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         data = await get_total_item_by_context(tableName="gallery", join="pin on pin.id = gallery.pin_id", targetColumn="pin_name", userId=user_id)
         if len(data) != 0:

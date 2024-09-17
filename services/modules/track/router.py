@@ -58,7 +58,7 @@ dummy_coordinate = f"{generate_dummy(type='lat')},{generate_dummy(type='long')}"
             }
         }
     })
-async def get_current_track(user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_current_track(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_tracks(userId=user_id)
     except Exception as e:
@@ -111,7 +111,7 @@ async def get_current_track(user_id: str = Path(..., example=generate_dummy(type
             }
         }
     })
-async def get_last_track(user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_last_track(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_last_tracker_position_api(userId=user_id)
     except Exception as e:
@@ -169,7 +169,7 @@ async def get_last_track(user_id: str = Path(..., example=generate_dummy(type='u
             }
         }
     })
-async def get_total_distance_by_month(year:int = Path(..., example=generate_dummy(type='year')), user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_total_distance_by_month(year:int = Path(..., example=generate_dummy(type='year')), user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_total_distance_by_month_query(userId=user_id, year=year)
     except Exception as e:
@@ -227,7 +227,7 @@ async def get_total_distance_by_month(year:int = Path(..., example=generate_dumm
             }
         }
     })
-async def get_total_distance_by_time(year:int = Path(..., example=generate_dummy(type='year')), user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_total_distance_by_time(year:int = Path(..., example=generate_dummy(type='year')), user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_total_distance_by_time_query(userId=user_id, year=year)
     except Exception as e:
@@ -282,7 +282,7 @@ async def get_total_distance_by_time(year:int = Path(..., example=generate_dummy
             }
         }
     })
-async def get_track_journey_by_date(date: str = Path(..., example=generate_dummy(type='date')), user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_track_journey_by_date(date: str = Path(..., example=generate_dummy(type='date'), max_length=10, min_length=10), user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         start_time = datetime.strptime(date + "T00:00:01", "%Y-%m-%dT%H:%M:%S")
         end_time = datetime.strptime(date + "T23:59:59", "%Y-%m-%dT%H:%M:%S")
@@ -336,7 +336,7 @@ async def get_track_journey_by_date(date: str = Path(..., example=generate_dummy
             }
         }
     })
-async def get_activity_around_coordinate(coordinate: str = Path(..., example=dummy_coordinate), user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_activity_around_coordinate(coordinate: str = Path(..., example=dummy_coordinate, max_length=72, min_length=10), user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_activity_around_coordinate_query(userId=user_id, coor=coordinate)
     except Exception as e:
@@ -395,7 +395,7 @@ class TrackPeriodRequest(BaseModel):
             }
         }
     })
-async def get_track_journey(request: TrackPeriodRequest, user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+async def get_track_journey(request: TrackPeriodRequest, user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         print(request)
         return await get_tracks_period(userId=user_id, start_time=request.start_time, end_time=request.end_time)

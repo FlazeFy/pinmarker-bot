@@ -31,4 +31,4 @@ if __name__ == '__main__':
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_ai))
 
     print('Polling...')
-    app.run_polling(poll_interval=10)
+    app.run_polling(poll_interval=1)
