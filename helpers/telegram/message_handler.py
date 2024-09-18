@@ -33,7 +33,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if query.data == '1':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Show my pin')
-            res, type, is_success = await api_get_all_pin(user_id=userId, max_dis=5000)
+            res, type, is_success = await api_get_all_pin(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             if type == 'file':
@@ -51,9 +51,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message_chunks = send_long_message(res)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            for chunk in message_chunks:
-                await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
-            await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
+            if is_success:
+                for chunk in message_chunks:
+                    await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
+                await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
+            else:
+                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
         elif query.data == '1/export':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Export pin')

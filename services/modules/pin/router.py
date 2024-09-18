@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Path
-from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query
+from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query
 from helpers.docs import generate_dummy
 
 router_pin = APIRouter()
@@ -415,3 +415,82 @@ async def get_all_pin_export_api():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+@router_pin.get("/api/v1/pin_global/{id}/{user_id}", response_model=dict, 
+    summary="Get Global List Detail By Id - for User (MySql)",
+    description="This request is used to get detail and relation of global list based on given `user_id` and global list's `id`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch detail of global list with all of pin relation by user id and global list id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": {
+                            "list_name": "Dessert Trips",
+                            "list_desc": "push glukosa",
+                            "list_tag": [
+                            {
+                                "tag_name": "Weekend"
+                            },
+                            {
+                                "tag_name": "Dessert"
+                            },
+                            {
+                                "tag_name": "Jakarta"
+                            }
+                            ],
+                            "created_at": "2024-08-11T06:11:30",
+                            "updated_at": "2024-08-17T01:19:44",
+                            "created_by": "12313123"
+                        },
+                        "data": [
+                            {
+                                "id": "c64da478-a237-9a81-2b11-a2baebfed0a8",
+                                "pin_name": "Warteg D Amertha",
+                                "pin_desc": "Warteg murmer langganan depan gapura D Amertha. Parkir di depan gapura. Minggu tutup",
+                                "pin_lat": "-6.977430240726936",
+                                "pin_long": "107.65112376402404",
+                                "pin_call": "08123456",
+                                "pin_category": "Restaurant",
+                                "created_at": "2024-09-01T20:23:21",
+                                "pin_address": "Jl. Ketupat",
+                                "created_by": "flazefy",
+                                "gallery_url": "https://leonardhors.com",
+                                "gallery_caption": "Ini gambar",
+                                "gallery_type": "image"
+                            }
+                        ],
+                        "message": "List and pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Global list not found for given user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Global list not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_detail_list_by_id(user_id: str= Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36), id:str = Path(..., example=generate_dummy(type='list_id'), max_length=36, min_length=36)):
+    try:
+        return await get_detail_list_by_id_query(userId=user_id, id=id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

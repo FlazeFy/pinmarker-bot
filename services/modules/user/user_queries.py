@@ -78,15 +78,12 @@ async def get_profile_by_telegram_id(teleId:str):
     user_data = result.first()
 
     if user_data:
-        return JSONResponse(
-            status_code=200, 
-            content={
-                "is_found": True,
-                "role":"user",
-                "data": user_data,
-                "message":"User found"
-            }
-        )
+        return {
+            "is_found": True,
+            "role":"user",
+            "data": user_data,
+            "message":"User found"
+        }
     else:
         # Query builder - Admin
         query = select(
@@ -106,25 +103,19 @@ async def get_profile_by_telegram_id(teleId:str):
         db.connect().close()
         
         if admin_data:
-            return JSONResponse(
-                status_code=200, 
-                content={
-                    "is_found": True,
-                    "role":"admin",
-                    "data": admin_data,
-                    "message":"Admin found"
-                }
-            )
+            return {
+                "is_found": True,
+                "role":"admin",
+                "data": admin_data,
+                "message":"Admin found"
+            }
         else: 
-            return JSONResponse(
-                status_code=404, 
-                content={
-                    "is_found": False,
-                    "role": None,
-                    "data": None,
-                    "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
-                }
-            )
+            return {
+                "is_found": False,
+                "role": None,
+                "data": None,
+                "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
+            }
         
 async def get_all_user():
     # Query builder

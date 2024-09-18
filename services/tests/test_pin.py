@@ -27,11 +27,15 @@ def test_get_all_pin_api():
         assert 'pin_person' in dt
         assert 'pin_address' in dt
         assert 'created_at' in dt
+        assert 'last_visit' in dt
+        assert 'total_visit' in dt
         
         assert isinstance(dt['pin_name'], str)
         assert isinstance(dt['pin_coordinate'], str)
         assert isinstance(dt['pin_category'], str)
         assert isinstance(dt['created_at'], str)
+        assert isinstance(dt['total_visit'], int)
+        assert isinstance(dt['total_visit'] >= 0,True)
 
         if dt['pin_desc'] is not None:
             assert isinstance(dt['pin_desc'], str)
@@ -39,6 +43,8 @@ def test_get_all_pin_api():
             assert isinstance(dt['pin_person'], str)
         if dt['pin_address'] is not None:
             assert isinstance(dt['pin_address'], str)
+        if dt['last_visit'] is not None:
+            assert isinstance(dt['last_visit'], str)
 
 def test_get_all_pin_export_api():
     response = requests.get(f"{base_url}/api/v1/pin_export/{user_id}")

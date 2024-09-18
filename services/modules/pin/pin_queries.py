@@ -1,7 +1,9 @@
 from services.modules.pin.pin_model import pin
 from services.modules.pin.global_list_model import global_list
+from services.modules.visit.visit_model import visit
 from services.modules.pin.global_list_rel_model import global_list_pin_relation
 from services.modules.user.user_model import user
+from services.modules.gallery.model import gallery
 from configs.configs import db
 from sqlalchemy import select, and_, func, or_, case
 from sqlalchemy.sql.functions import concat
@@ -18,9 +20,15 @@ async def get_all_pin(userId:str, platform:str):
             pin.c.pin_category,
             pin.c.pin_person,
             pin.c.pin_address,
-            pin.c.created_at
+            pin.c.created_at,
+            func.ifnull(func.count(visit.c.id), 0).label('total_visit'),
+            func.max(visit.c.created_at).label('last_visit')
+        ).outerjoin(
+            visit, visit.c.pin_id == pin.c.id
         ).where(
             pin.c.created_by == userId,
+        ).group_by(
+            pin.c.id
         ).order_by(
             pin.c.pin_category.asc(),
             pin.c.pin_name.asc()
@@ -68,6 +76,8 @@ async def get_all_pin(userId:str, platform:str):
         for row in data:
             data_list = dict(row._mapping)
             data_list['created_at'] = data_list['created_at'].isoformat() 
+            if data_list['last_visit']:
+                data_list['last_visit'] = data_list['last_visit'].isoformat() 
             data_list_final.append(data_list)
         data_list = data_list_final
 
@@ -238,17 +248,18 @@ async def get_global_list_query(search:str):
     db.connect().close()
 
     data_list = [dict(row._mapping) for row in data]
-    data_list_final = []
-    for row in data:
-        data_list = dict(row._mapping)
-        data_list['created_at'] = data_list['created_at'].isoformat() 
-        data_list_final.append(data_list)
 
     if len(data) > 0:
+        data_list_final = []
+        for row in data:
+            data_list = dict(row._mapping)
+            data_list['created_at'] = data_list['created_at'].isoformat() 
+            data_list_final.append(data_list)
+            
         return JSONResponse(
             status_code=200, 
             content={
-                "data": data_list,
+                "data": data_list_final,
                 "message": "Pin found",
                 "count": len(data)
             }
@@ -508,6 +519,103 @@ async def get_pin_by_category_query(category:str,user_id:str):
             content={
                 "data": None,
                 "message": "Pin not found",
+                "count": 0
+            }
+        )
+    
+async def get_detail_list_by_id_query(id:str, userId:str):
+    # Query builder
+    query_list = select(
+        global_list.c.list_name,
+        global_list.c.list_desc,
+        global_list.c.list_tag,
+        global_list.c.created_at,
+        global_list.c.updated_at,
+        user.c.username.label('created_by')
+    ).where(
+        and_(
+            pin.c.created_by == userId,
+            global_list.c.id == id
+        )
+    )
+
+    query_list_rel = select(
+        global_list_pin_relation.c.id,
+        pin.c.pin_name,
+        pin.c.pin_desc,
+        pin.c.pin_lat,
+        pin.c.pin_long,
+        pin.c.pin_call,
+        pin.c.pin_category,
+        global_list_pin_relation.c.created_at,
+        pin.c.pin_address,
+        user.c.username.label('created_by'),
+        func.ifnull(func.group_concat(func.coalesce(gallery.c.gallery_url, None)), '').label('gallery_url'),
+        func.ifnull(func.group_concat(func.coalesce(gallery.c.gallery_caption, None)), '').label('gallery_caption'),
+        func.ifnull(func.group_concat(func.coalesce(gallery.c.gallery_type, None)), '').label('gallery_type')
+    ).join(
+        pin, global_list_pin_relation.c.pin_id == pin.c.id
+    ).join(
+        user, user.c.id == global_list_pin_relation.c.created_by
+    ).outerjoin(
+        gallery, gallery.c.pin_id == pin.c.id
+    ).where(
+        global_list_pin_relation.c.list_id == id
+    ).group_by(
+        global_list_pin_relation.c.id
+    ).order_by(
+        global_list_pin_relation.c.created_at.desc()
+    )
+
+    #Exec
+    result_detail = db.connect().execute(query_list)
+    result_rel = db.connect().execute(query_list_rel)
+    detail = result_detail.first()
+    data = result_rel.fetchall()
+    db.connect().close()
+
+    if detail:
+        detail_dict = dict(detail._mapping)
+        detail_dict['created_at'] = detail_dict['created_at'].isoformat()
+        if detail_dict['updated_at']:
+            detail_dict['updated_at'] = detail_dict['updated_at'].isoformat()
+        detail = detail_dict
+
+    if data:
+        data_dict_final = []
+        for row in data:
+            data_dict = dict(row._mapping)
+            data_dict['created_at'] = data_dict['created_at'].isoformat() 
+            data_dict_final.append(data_dict)
+        data = data_dict_final
+
+    if detail and data:
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "detail": detail,
+                "data": data,
+                "message": "List and pin found",
+                "count": len(data)
+            }
+        )
+    elif detail: 
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "detail": detail_dict,
+                "data": None,
+                "message": "List found",
+                "count": 0
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "detail": None,
+                "data": None,
+                "message": "List not found",
                 "count": 0
             }
         )

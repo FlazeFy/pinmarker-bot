@@ -5,14 +5,10 @@ from firebase_admin import storage
 from datetime import datetime
 import httpx
 # Query
-async def api_get_all_pin(user_id: str, max_dis: int):
+async def api_get_all_pin(user_id: str):
     try:
-        payload = {
-            "id": user_id,
-            "max_distance": max_dis
-        }
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"http://127.0.0.1:8000/api/v1/pin/nearest/-6.2333934867861975/106.82363788271587",json=payload)
+            response = await client.get(f"http://127.0.0.1:8000/api/v1/pin/{user_id}")
             response.raise_for_status()
             data = response.json()
 
@@ -29,6 +25,8 @@ async def api_get_all_pin(user_id: str, max_dis: int):
                         "Address",
                         "Category",
                         "Person in Touch",
+                        "Total Visit",
+                        "Last Visit",
                         "Created At"
                     ])
 
@@ -40,6 +38,8 @@ async def api_get_all_pin(user_id: str, max_dis: int):
                             dt['pin_address'] or '-',
                             dt['pin_category'],
                             dt['pin_person'] or '-',
+                            dt['total_visit'],
+                            dt['last_visit'] or '-',
                             dt['created_at']
                         ])
 
@@ -58,7 +58,18 @@ async def api_get_all_pin(user_id: str, max_dis: int):
 
                     return file_bytes, 'file', True
                 elif data['count'] > 0:
-                    res = "\n".join([f"Name: {item['pin_name']}\nDescription: {item['pin_desc']or '-'}\nCoordinate: {item['pin_coordinate']}\nAddress: {item['pin_address']or '-'}\nCategory: {item['pin_category']}\nPerson in Touch: {item['pin_person']or '-'}\nCreated At: {item['created_at']or '-'}\n" for item in data['data']])
+                    res = ''
+                    for item in data['data']:
+                        res += (
+                            f"<b>{item['pin_name']}</b> - {item['pin_category']}\n"
+                            f"{item['pin_desc']or '-'}\n"
+                            f"https://www.google.com/maps/place/{item['pin_coordinate']}\n\n"
+                            f"Person in Touch : {item['pin_person'] or '-'}\n"
+                            f"Address : {item['pin_address'] or '-'}\n"
+                            f"Total / Last Visit : {item['total_visit']} / {item['last_visit']or '-'}\n"
+                            f"Created At : {item['created_at'] or '-'}\n\n"
+                            f"========== || ========== || ==========\n\n"
+                        )
                     return res, 'text', True
             else:
                 return "No pin found", "text", False
@@ -126,8 +137,9 @@ async def api_get_all_pin_export(user_id: str):
 async def  api_get_nearset_pin(userId: str, max_dis:int):
     try:
         payload = {
-            "id": userId,
-            "max_distance": max_dis
+            "user_id": userId,
+            "max_distance": max_dis,
+            "limit":5
         }
         async with httpx.AsyncClient() as client:
             response = await client.post(f"http://127.0.0.1:8000/api/v1/pin/nearest/-6.2333934867861975/106.82363788271587", json=payload)

@@ -22,4 +22,6 @@ def generate_dummy(type:str):
         return 'flazefy'
     elif type == 'token':
         return 'AWSEDR'
+    elif type == 'list_id':
+        return 'e396661c-5797-11ef-a5a5-3216422910e8'
     
