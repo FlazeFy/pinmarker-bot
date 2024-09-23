@@ -165,8 +165,9 @@ def test_get_nearest_pin_api():
     lat = "-6.2333934867861975"
     long = "106.82363788271587"
     payload = {
-        "id": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
-        "max_distance": 1000
+        "user_id": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+        "max_distance": 5000,
+        "limit": 5
     }
 
     response = requests.post(f"{base_url}/api/v1/pin/nearest/{lat}/{long}",json=payload)
@@ -196,3 +197,78 @@ def test_get_nearest_pin_api():
         assert isinstance(dt['pin_name'], str)
         assert isinstance(dt['pin_coor'], str)
         assert isinstance(dt['distance'], float)
+
+def test_get_global_pin_by_list_id_api():
+    payload = {
+        "list_ids": "e396661c-5797-11ef-a5a5-3216422910e8,e39fa3c5-14d4-7ac9-1062-33e5d71ee72b",
+    }
+    response = requests.post(f"{base_url}/api/v1/pin_global/search/by_list_id", json=payload)
+    data = response.json()
+
+    # Check the status code
+    assert response.status_code == 200    
+
+    # Check message key in object body
+    assert 'message' in data
+    assert isinstance(data['message'], str), "The key 'message' should be an string"
+    
+    # Check data key in object body
+    assert 'data' in data
+    assert isinstance(data['data'], object), "The key 'data' should be a object"
+    
+    # Check the data in object
+    for dt in data['data']:
+        assert 'list_id' in dt
+        assert 'list_name' in dt
+        assert 'pin_name' in dt
+        assert 'pin_category' in dt
+        assert 'pin_coordinate' in dt
+        assert 'created_at' in dt
+        assert 'created_by' in dt
+        
+        assert isinstance(dt['list_id'], str)
+        assert isinstance(dt['list_name'], str)
+        assert isinstance(dt['pin_name'], str)
+        assert isinstance(dt['pin_coordinate'], str)
+        assert isinstance(dt['pin_category'], str)
+        assert isinstance(dt['created_at'], str)
+        assert isinstance(dt['created_by'], str)
+
+def test_get_global_list_api():
+    search = 'jakarta'
+    response = requests.get(f"{base_url}/api/v1/pin_global/{search}")
+    data = response.json()
+
+    # Check the status code
+    assert response.status_code == 200    
+
+    # Check message key in object body
+    assert 'message' in data
+    assert isinstance(data['message'], str), "The key 'message' should be an string"
+    
+    # Check data key in object body
+    assert 'data' in data
+    assert isinstance(data['data'], object), "The key 'data' should be a object"
+    
+    # Check the data in object
+    for dt in data['data']:
+        assert 'id' in dt
+        assert 'pin_list' in dt
+        assert 'total' in dt
+        assert 'list_name' in dt
+        assert 'list_desc' in dt
+        assert 'list_tag' in dt
+        assert 'created_at' in dt
+        assert 'created_by' in dt
+        
+        assert isinstance(dt['id'], str)
+        assert isinstance(dt['pin_list'], str)
+        assert isinstance(dt['total'], int)
+        assert isinstance(dt['list_name'], str)
+        assert isinstance(dt['created_at'], str)
+        assert isinstance(dt['created_by'], str)
+
+        if dt['list_desc'] is not None:
+            assert isinstance(dt['list_desc'], str)
+        if dt['list_tag'] is not None:
+            assert isinstance(dt['list_tag'], list)

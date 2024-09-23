@@ -76,7 +76,7 @@ async def get_all_pin(userId:str, platform:str):
         for row in data:
             data_list = dict(row._mapping)
             data_list['created_at'] = data_list['created_at'].isoformat() 
-            if data_list['last_visit']:
+            if platform == 'telegram' and data_list['last_visit']:
                 data_list['last_visit'] = data_list['last_visit'].isoformat() 
             data_list_final.append(data_list)
         data_list = data_list_final
@@ -616,6 +616,66 @@ async def get_detail_list_by_id_query(id:str, userId:str):
                 "detail": None,
                 "data": None,
                 "message": "List not found",
+                "count": 0
+            }
+        )
+    
+async def get_global_pin_by_list_id(list_ids:str):
+    list_id_array = list(map(str, list_ids.split(',')))
+
+    # Query builder
+    query = select(
+        global_list.c.id.label("list_id"),
+        global_list.c.list_name,
+        pin.c.pin_name,
+        pin.c.pin_desc,
+        pin.c.pin_category,
+        concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
+        global_list.c.created_at,
+        user.c.username.label('created_by')
+    ).join(
+        global_list_pin_relation, global_list_pin_relation.c.list_id == global_list.c.id
+    ).join(
+        pin, pin.c.id == global_list_pin_relation.c.pin_id
+    ).join(
+        user, user.c.id == global_list.c.created_by
+    ).where(
+        and_(
+            pin.c.deleted_at.is_(None),
+            global_list.c.id.in_(list_id_array)
+        )
+    )
+
+    # query = query.group_by(pin.c.id)
+    query = query.order_by(global_list.c.created_at.desc())
+
+    # Exec
+    result = db.connect().execute(query)
+    data = result.fetchall()
+    db.connect().close()
+
+    data_list = [dict(row._mapping) for row in data]
+
+    if len(data) > 0:
+        data_list_final = []
+        for row in data_list:
+            row['created_at'] = row['created_at'].isoformat() 
+            data_list_final.append(row)
+            
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list_final,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
                 "count": 0
             }
         )

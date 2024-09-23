@@ -1,6 +1,5 @@
 import json
 from typing import Final
-from telegram import Update
 from telegram.ext import Application, CommandHandler,  CallbackQueryHandler, MessageHandler, filters
 
 from configs.configs import cred

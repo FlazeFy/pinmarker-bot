@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Path
-from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query
+from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id
 from helpers.docs import generate_dummy
 
 router_pin = APIRouter()
@@ -492,5 +492,63 @@ async def get_all_pin_export_api():
 async def get_detail_list_by_id(user_id: str= Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36), id:str = Path(..., example=generate_dummy(type='list_id'), max_length=36, min_length=36)):
     try:
         return await get_detail_list_by_id_query(userId=user_id, id=id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.post("/api/v1/pin_global/search/by_list_id", response_model=dict, 
+    summary="Get Global Pin By Some of List ID (MySql)",
+    description="This request is used to get global pin based on given set of `list_ids`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all pin by list ids",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "list_id": "e396661c-5797-11ef-a5a5-3216422910e8",
+                                "list_name": "Dessert Trips",
+                                "pin_name": "pinpin",
+                                "pin_desc": "ini deskripsi",
+                                "pin_category": "Outlet Telkomsel",
+                                "pin_coordinate": "-6.267563333,106.7964583",
+                                "created_at": "2024-08-11T06:11:30",
+                                "created_by": "flazefy"
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found for given list ids",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_global_pin_by_list_id_api(request : Request):
+    try:
+        data = await request.json()
+        return await get_global_pin_by_list_id(list_ids=data.get('list_ids'))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

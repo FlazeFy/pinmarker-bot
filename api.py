@@ -9,7 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from configs.configs import cred
 import firebase_admin
-app = FastAPI()
+app = FastAPI(
+    title="PinMarker API",
+    description="This is an Rest API documentation for all PinMarker request that used in PinMarker Mobile, PinMarker Telegram BOT, PinMarker Discord BOT, and PinMarker Web. This Backend environment was built using Fast API and have databases of MySQL, Firebase Realtime, and SQFlite for the database. And was hosted in CPanel.",
+    version="1.0.0"
+)
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://pinmarker-36552-default-rtdb.firebaseio.com/',
     'storageBucket': 'pinmarker-36552.appspot.com'
@@ -34,13 +38,6 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)
- 
-# Swagger
-app = FastAPI(
-    title="PinMarker API",
-    description="This is an Rest API documentation for all PinMarker request that used in PinMarker Mobile, PinMarker Telegram BOT, PinMarker Discord BOT, and PinMarker Web. This Backend environment was built using Fast API and have databases of MySQL, Firebase Realtime, and SQFlite for the database. And was hosted in CPanel.",
-    version="1.0.0"
 )
 
 # Router
