@@ -272,3 +272,71 @@ def test_get_global_list_api():
             assert isinstance(dt['list_desc'], str)
         if dt['list_tag'] is not None:
             assert isinstance(dt['list_tag'], list)
+
+def test_get_pin_detail_history_by_id_api():
+    pin_id = '049f5af1-7a22-4fea-adc3-dae717a45581'
+    user_id = 'fcd3f23e-e5aa-11ee-892a-3216422910e9'
+    response = requests.get(f"{base_url}/api/v1/pin/detail/{pin_id}/{user_id}")
+    data = response.json()
+
+    # Check the status code
+    assert response.status_code == 200    
+
+    # Check message key in object body
+    assert 'message' in data
+    assert isinstance(data['message'], str), "The key 'message' should be an string"
+    
+    # Check data key in object body
+    assert 'data' in data
+    assert isinstance(data['data'], object), "The key 'data' should be a object"
+
+    # Check history key in object body
+    assert 'history' in data
+    assert isinstance(data['history'], list), "The key 'history' should be a array"
+
+    # Check the data in object
+    assert 'pin_name' in data['data']
+    assert 'pin_desc' in data['data']
+    assert 'pin_category' in data['data']
+    assert 'pin_lat' in data['data']
+    assert 'pin_long' in data['data']
+    assert 'pin_person' in data['data']
+    assert 'pin_email' in data['data']
+    assert 'pin_call' in data['data']
+    assert 'pin_address' in data['data']
+    assert 'created_at' in data['data']
+    assert 'updated_at' in data['data']
+    
+    assert isinstance(data['data']['pin_name'], str)
+    assert isinstance(data['data']['pin_category'], str)
+    assert isinstance(data['data']['pin_lat'], str)
+    assert isinstance(data['data']['pin_long'], str)
+    assert isinstance(data['data']['created_at'], str)
+
+    if data['data']['pin_desc'] is not None:
+        assert isinstance(data['data']['pin_desc'], str)
+    if data['data']['pin_person'] is not None:
+        assert isinstance(data['data']['pin_person'], str)
+    if data['data']['pin_email'] is not None:
+        assert isinstance(data['data']['pin_email'], str)
+    if data['data']['pin_call'] is not None:
+        assert isinstance(data['data']['pin_call'], str)
+    if data['data']['pin_address'] is not None:
+        assert isinstance(data['data']['pin_address'], str)
+    if data['data']['updated_at'] is not None:
+        assert isinstance(data['data']['updated_at'], str)
+
+    # Check the history item in array
+    for dt in data['history']:
+        assert 'visit_desc' in dt
+        assert 'visit_by' in dt
+        assert 'visit_with' in dt
+        assert 'created_at' in dt
+        
+        assert isinstance(dt['visit_by'], str)
+        assert isinstance(dt['created_at'], str)
+
+        if dt['visit_desc'] is not None:
+            assert isinstance(dt['visit_desc'], str)
+        if dt['visit_with'] is not None:
+            assert isinstance(dt['visit_with'], str)

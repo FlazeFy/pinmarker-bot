@@ -679,3 +679,79 @@ async def get_global_pin_by_list_id(list_ids:str):
                 "count": 0
             }
         )
+    
+async def get_pin_detail_history_by_id(pin_id:str, user_id:str):
+    # Query builder Detail
+    query_detail = select(
+        pin.c.pin_name,
+        pin.c.pin_desc,
+        pin.c.pin_category,
+        pin.c.pin_lat,
+        pin.c.pin_long,
+        pin.c.pin_person,
+        pin.c.pin_email,
+        pin.c.pin_call,
+        pin.c.pin_address,
+        pin.c.created_at,
+        pin.c.updated_at
+    ).where(
+        and_(
+            pin.c.deleted_at.is_(None),
+            pin.c.id == pin_id,
+            pin.c.created_by == user_id
+        )
+    )
+
+    # Exec Detail
+    result_detail = db.connect().execute(query_detail)
+    data_detail = result_detail.first()
+
+    # Query builder visit
+    data_history = []
+    if data_detail:
+        query_history = select(
+            visit.c.visit_desc,
+            visit.c.visit_by,
+            visit.c.visit_with,
+            visit.c.created_at,
+        ).where(
+            visit.c.pin_id == pin_id
+        )
+
+        # Exec visit
+        result_history = db.connect().execute(query_history)
+        data_history = result_history.fetchall()
+
+    db.connect().close()
+
+    if data_detail:
+        data_detail_dict = dict(data_detail._mapping)
+        data_detail_dict['created_at'] = data_detail_dict['created_at'].isoformat()
+        if data_detail_dict['updated_at']:
+            data_detail_dict['updated_at'] = data_detail_dict['updated_at'].isoformat()
+        data_detail = data_detail_dict
+
+        data_history_final = []
+        data_history = [dict(row._mapping) for row in data_history]
+        if data_history:
+            for row in data_history:
+                row['created_at'] = row['created_at'].isoformat() 
+                data_history_final.append(row)
+
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_detail,
+                "message": "Pin found",
+                "history": data_history_final if len(data_history_final) > 0 else None
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "history": None
+            }
+        )

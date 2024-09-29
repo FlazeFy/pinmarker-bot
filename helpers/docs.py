@@ -24,4 +24,6 @@ def generate_dummy(type:str):
         return 'AWSEDR'
     elif type == 'list_id':
         return 'e396661c-5797-11ef-a5a5-3216422910e8'
+    elif type == 'pin_id':
+        return '049f5af1-7a22-4fea-adc3-dae717a45581'
     
