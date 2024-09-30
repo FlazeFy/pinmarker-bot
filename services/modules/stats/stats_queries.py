@@ -12,9 +12,9 @@ async def get_stats(userId:str):
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     userId = "fcd3f23e-e5aa-11ee-892a-3216422910e9"
 
-    dt_total_pin_by_category = await get_total_item_by_context(tableName="pin", join=None, targetColumn="pin_category", userId=userId)
-    dt_total_visit_by_category = await get_total_item_by_context(tableName="visit", join="pin on pin.id = visit.pin_id", targetColumn="pin_category", userId=userId)
-    dt_total_gallery_by_pin = await get_total_item_by_context(tableName="gallery", join="pin on pin.id = gallery.pin_id", targetColumn="pin_name", userId=userId)
+    dt_total_pin_by_category = await get_total_item_by_context(tableName="pin", join=None, targetColumn="pin_category", userId=userId, where=None)
+    dt_total_visit_by_category = await get_total_item_by_context(tableName="visit", join="pin on pin.id = visit.pin_id", targetColumn="pin_category", userId=userId, where=None)
+    dt_total_gallery_by_pin = await get_total_item_by_context(tableName="gallery", join="pin on pin.id = gallery.pin_id", targetColumn="pin_name", userId=userId, where=None)
 
     year = datetime(datetime.now().year, 1, 1).strftime('%Y')
     sql_visit_by_month = text(f"""

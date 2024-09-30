@@ -14,6 +14,7 @@ async def get_all_pin(userId:str, platform:str):
     # Query builder
     if platform == 'telegram':
         query = select(
+            pin.c.id,
             pin.c.pin_name,
             pin.c.pin_desc,
             concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
