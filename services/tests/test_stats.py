@@ -80,9 +80,9 @@ def test_get_total_visit_by_category():
         assert isinstance(item['context'], str)
         assert isinstance(item['total'], int)
 
-def test_get_total_visit_by_category_by_pin():
+def test_get_total_visit_by_by_pin():
     pin_id = '049f5af1-7a22-4fea-adc3-dae717a45581'
-    response = requests.get(f"{base_url}/api/v1/stats/total_visit_by_category/{user_id}/{pin_id}")
+    response = requests.get(f"{base_url}/api/v1/stats/total_visit_by_by_pin/{user_id}/{pin_id}")
     data = response.json()
 
     # Check the status code

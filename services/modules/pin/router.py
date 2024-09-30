@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Path
-from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id
+from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id,get_pin_distance_to_my_personal_pin_by_id
 from helpers.docs import generate_dummy
 
 router_pin = APIRouter()
@@ -304,7 +304,7 @@ async def get_nearest_pin_api(
 @router_pin.get("/api/v2/pin", response_model=dict, 
     summary="Get All Pin - for Admin (MySql)",
     description="This request is used to get all pin",
-    tags=["Pin"],
+    tags=["Pin (v2 - Admin)"],
     responses={
         200: {
             "description": "Successful fetch all pin",
@@ -364,7 +364,7 @@ async def get_all_pin_api():
 @router_pin.get("/api/v2/pin_export", response_model=dict, 
     summary="Get All Pin - for Admin Export Format (MySql)",
     description="This request is used to get all pin but the result is designed for import format (CSV) in PinMarker Web",
-    tags=["Pin"],
+    tags=["Pin (v2 - Admin)"],
     responses={
         200: {
             "description": "Successful fetch all pin by user id",
@@ -615,5 +615,59 @@ async def get_global_pin_by_list_id_api(request : Request):
 async def get_pin_detail_history_by_id_api(id: str = Path(..., example=generate_dummy(type='pin_id')),user_id: str = Path(..., example=generate_dummy(type='user_id'))):
     try:
         return await get_pin_detail_history_by_id(pin_id=id, user_id=user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.get("/api/v1/pin/distance/personal/{id}/{user_id}", response_model=dict, 
+    summary="Get Pin Distance to My Personal Pin(MySql)",
+    description="This request is used to get pin distance to my personal category pin based on its `id` and `user_id`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch pin distance",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "id": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                            "pin_name": "My Kost",
+                            "pin_desc": "Kamar A66",
+                            "pin_lat": "-6.226838579766097",
+                            "pin_long": "106.82157923228753",
+                            "distance_to_meters": 9.46,
+                            "created_at": "2024-03-16T01:47:22",
+                        },
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found or the pin derpature is not exist",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found | Pin derpature not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_pin_distance_to_my_personal_pin_by_id_api(id: str = Path(..., example=generate_dummy(type='pin_id')),user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+    try:
+        return await get_pin_distance_to_my_personal_pin_by_id(pin_id=id, user_id=user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

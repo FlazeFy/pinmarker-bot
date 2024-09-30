@@ -756,3 +756,77 @@ async def get_pin_detail_history_by_id(pin_id:str, user_id:str):
                 "history": None
             }
         )
+    
+async def get_pin_distance_to_my_personal_pin_by_id(pin_id:str, user_id:str):
+    # Query builder
+    query = select(
+        pin.c.id,
+        pin.c.pin_name,
+        pin.c.pin_desc,
+        pin.c.pin_lat,
+        pin.c.pin_long,
+        pin.c.created_at,
+    ).where(
+        and_(
+            pin.c.deleted_at.is_(None),
+            pin.c.id != pin_id,
+            pin.c.pin_category == 'Personal',
+            pin.c.created_by == user_id
+        )
+    )
+    # Exec Detail
+    result = db.connect().execute(query)
+    data = result.fetchall()
+
+    if data:
+        # Query departure
+        query_departure = select(
+            pin.c.pin_lat,
+            pin.c.pin_long
+        ).where(
+            and_(
+                pin.c.deleted_at.is_(None),
+                pin.c.id == pin_id
+            )
+        )
+        # Exec departure query
+        result_departure = db.connect().execute(query_departure)
+        data_departure = result_departure.first()
+
+        db.connect().close()
+        if data_departure:
+            data_final = []
+            data_list = [dict(row._mapping) for row in data]
+            if data_list:
+                for row in data_list:
+                    row['created_at'] = row['created_at'].isoformat() 
+                    row['distance_to_meters'] = float(round(calculate_distance(coord1=f"{row['pin_lat']},{row['pin_long']}", coord2=f"{data_departure.pin_lat},{data_departure.pin_long}"), 2))
+                    data_final.append(row)
+                    
+            return JSONResponse(
+                status_code=200, 
+                content={
+                    "data": data_final,
+                    "message": "Pin found",
+                    "count": len(data_final)
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=404, 
+                content={
+                    "data": None,
+                    "message": "Pin derpature not found",
+                    "count": 0
+                }
+            )
+    else:
+        db.connect().close()
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )

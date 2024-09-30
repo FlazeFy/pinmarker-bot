@@ -192,13 +192,13 @@ async def get_total_visit_by_category(user_id: str = Path(..., example=generate_
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router_stats.get("/api/v1/stats/total_visit_by_category/{user_id}/{pin_id}", response_model=dict, 
-    summary="Get Total Visit By Category and Pin (MySql)",
-    description="This request is used to get stats total visit for each category from a pin based on given `user_id` and `pin_id`. This returned response have reusable format for used in chart template",
+@router_stats.get("/api/v1/stats/total_visit_by_by_pin/{user_id}/{pin_id}", response_model=dict, 
+    summary="Get Total Visit By and Pin (MySql)",
+    description="This request is used to get stats total visit for each visit by from a pin based on given `user_id` and `pin_id`. This returned response have reusable format for used in chart template",
     tags=["Stats"],
     responses={
         200: {
-            "description": "Successful fetch total visit for each category for given user id and pin id",
+            "description": "Successful fetch total visit for each visit by for given user id and pin id",
             "content": {
                 "application/json": {
                     "example": {
@@ -237,9 +237,9 @@ async def get_total_visit_by_category(user_id: str = Path(..., example=generate_
             }
         }
     })
-async def get_total_visit_by_category_by_pin(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36),pin_id: str = Path(..., example=generate_dummy(type='pin_id'), max_length=36, min_length=36)):
+async def get_total_visit_by_by_pin(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36),pin_id: str = Path(..., example=generate_dummy(type='pin_id'), max_length=36, min_length=36)):
     try:
-        data = await get_total_item_by_context(tableName="visit", join="pin on pin.id = visit.pin_id", targetColumn="pin_category", userId=user_id, where=f"pin.id = '{pin_id}'")
+        data = await get_total_item_by_context(tableName="visit", join="pin on pin.id = visit.pin_id", targetColumn="visit_by", userId=user_id, where=f"pin.id = '{pin_id}'")
         if len(data) != 0:
             data_list = [dict(row._mapping) for row in data]
             return JSONResponse(
