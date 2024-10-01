@@ -376,3 +376,37 @@ def test_get_pin_distance_to_my_personal_pin_by_id():
 
         if dt['pin_desc'] is not None:
             assert isinstance(dt['pin_desc'], str)
+
+def test_get_trash_pin_api():
+    user_id = 'fcd3f23e-e5aa-11ee-892a-3216422910e9'
+    response = requests.get(f"{base_url}/api/v1/pin_trash/{user_id}")
+    data = response.json()
+
+    # Check the status code
+    assert response.status_code == 200    
+
+    # Check message key in object body
+    assert 'message' in data
+    assert isinstance(data['message'], str), "The key 'message' should be an string"
+    
+    # Check data key in object body
+    assert 'data' in data
+    assert isinstance(data['data'], object), "The key 'data' should be a object"
+    
+    # Check the data in object
+    for dt in data['data']:
+        assert 'id' in dt
+        assert 'pin_name' in dt
+        assert 'total_visit' in dt
+        assert 'created_at' in dt
+        assert 'updated_at' in dt
+        assert 'deleted_at' in dt
+        
+        assert isinstance(dt['id'], str)
+        assert isinstance(dt['pin_name'], str)
+        assert isinstance(dt['total_visit'], int)
+        assert isinstance(dt['created_at'], str)
+        assert isinstance(dt['deleted_at'], str)
+
+        if dt['updated_at'] is not None:
+            assert isinstance(dt['updated_at'], str)

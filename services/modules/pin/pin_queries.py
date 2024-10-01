@@ -830,3 +830,59 @@ async def get_pin_distance_to_my_personal_pin_by_id(pin_id:str, user_id:str):
                 "count": 0
             }
         )
+    
+async def get_trash_pin(user_id:str):
+    # Query builder
+    query = select(
+        pin.c.id,
+        pin.c.pin_name,
+        func.coalesce(func.count(visit.c.id), 0).label('total_visit'),
+        pin.c.created_at,
+        pin.c.updated_at,
+        pin.c.deleted_at,
+    ).outerjoin(
+        visit, visit.c.pin_id == pin.c.id
+    ).where(
+        and_(
+            pin.c.deleted_at.isnot(None),
+            pin.c.created_by == user_id
+        )
+    ).group_by(
+        pin.c.id
+    ).order_by(
+        pin.c.deleted_at.desc()
+    )
+
+    # Exec
+    result = db.connect().execute(query)
+    data = result.fetchall()
+    db.connect().close()
+
+    data_list = [dict(row._mapping) for row in data]
+
+    if len(data) > 0:
+        data_list_final = []
+        for row in data_list:
+            row['created_at'] = row['created_at'].isoformat() 
+            row['deleted_at'] = row['deleted_at'].isoformat() 
+            if row['updated_at']:
+                row['updated_at'] = row['updated_at'].isoformat() 
+            data_list_final.append(row)
+            
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list_final,
+                "message": "Pin found",
+                "count": len(data)
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "count": 0
+            }
+        )

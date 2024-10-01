@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Path
-from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id,get_pin_distance_to_my_personal_pin_by_id
+from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id,get_pin_distance_to_my_personal_pin_by_id,get_trash_pin
 from services.modules.pin.pin_commands import soft_delete_pin_by_id,recover_pin_by_id,hard_delete_pin_by_id
 from helpers.docs import generate_dummy
 
@@ -802,5 +802,60 @@ async def recover_pin_by_id_api(id: str = Path(..., example=generate_dummy(type=
 async def hard_delete_pin_by_id_api(id: str = Path(..., example=generate_dummy(type='pin_id')),user_id: str = Path(..., example=generate_dummy(type='user_id'))):
     try:
         return await hard_delete_pin_by_id(pin_id=id, user_id=user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.get("/api/v1/pin_trash/{user_id}", response_model=dict, 
+    summary="Get all deleted pin (MySql)",
+    description="This request is used to get all deleted pin based on given `user_id`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch deleted pin",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "id": "0c89ca34-09c2-08b9-2a73-a8935b9549d4",
+                                "pin_name": "asdasdasasd",
+                                "total_visit": 1,
+                                "created_at": "2024-06-26T03:04:23",
+                                "updated_at": "2024-07-13T02:32:53",
+                                "deleted_at": "2024-10-01T02:40:37"
+                            }
+                        ],
+                        "message": "Pin found",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_trash_pin_api(user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+    try:
+        return await get_trash_pin(user_id=user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
