@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Path
 from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id,get_pin_distance_to_my_personal_pin_by_id,get_trash_pin
-from services.modules.pin.pin_commands import soft_delete_pin_by_id,recover_pin_by_id,hard_delete_pin_by_id
+from services.modules.pin.pin_commands import soft_delete_pin_by_id,recover_pin_by_id,hard_delete_pin_by_id,put_pin_favorite
 from helpers.docs import generate_dummy
 
 router_pin = APIRouter()
@@ -678,7 +678,7 @@ async def get_pin_distance_to_my_personal_pin_by_id_api(id: str = Path(..., exam
     description="This request is used to delete (soft-delete) a pin and still can be recovered based on its `id` and `user_id`",
     tags=["Pin"],
     responses={
-        201: {
+        200: {
             "description": "Successful delete pin",
             "content": {
                 "application/json": {
@@ -722,7 +722,7 @@ async def soft_delete_pin_by_id_api(id: str = Path(..., example=generate_dummy(t
     description="This request is used to recover deleted (soft-delete) pin based on its `id` and `user_id`",
     tags=["Pin"],
     responses={
-        201: {
+        200: {
             "description": "Successful recover deleted pin",
             "content": {
                 "application/json": {
@@ -766,7 +766,7 @@ async def recover_pin_by_id_api(id: str = Path(..., example=generate_dummy(type=
     description="This request is used to permentally delete (hard-delete) a pin and cant be recovered `id` and `user_id`",
     tags=["Pin"],
     responses={
-        201: {
+        200: {
             "description": "Successful permentally delete pin",
             "content": {
                 "application/json": {
@@ -857,5 +857,49 @@ async def hard_delete_pin_by_id_api(id: str = Path(..., example=generate_dummy(t
 async def get_trash_pin_api(user_id: str = Path(..., example=generate_dummy(type='user_id'))):
     try:
         return await get_trash_pin(user_id=user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.put("/api/v1/pin/toggle_favorite/{id}/{user_id}", response_model=dict, 
+    summary="Update pin favorite status / toggle (MySql)",
+    description="This request is used to toggle pin favorite status based on given `user_id` and pin's`id`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful update pin",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Pin updated",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def put_pin_favorite_api(user_id: str = Path(..., example=generate_dummy(type='user_id')),id: str = Path(..., example=generate_dummy(type='pin_id'))):
+    try:
+        return await put_pin_favorite(user_id=user_id,pin_id=id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -39,7 +39,7 @@ async def soft_delete_pin_by_id(pin_id: str, user_id: str):
 
                 session.commit()
                 return JSONResponse(
-                    status_code=201, 
+                    status_code=200, 
                     content={
                         "message": "Pin deleted" if is_history_success else "Pin deleted but failed to write history",
                         "count": 1
@@ -91,7 +91,7 @@ async def recover_pin_by_id(pin_id: str, user_id: str):
 
                 session.commit()
                 return JSONResponse(
-                    status_code=201, 
+                    status_code=200, 
                     content={
                         "message": "Pin recovered" if is_history_success else "Pin recovered but failed to write history",
                         "count": 1
@@ -142,9 +142,61 @@ async def hard_delete_pin_by_id(pin_id: str, user_id: str):
 
                 session.commit()
                 return JSONResponse(
-                    status_code=201, 
+                    status_code=200, 
                     content={
                         "message": "Pin permentally deleted" if is_history_success else "Pin permentally deleted but failed to write history",
+                        "count": 1
+                    }
+                )
+            else: 
+                session.commit()
+                return JSONResponse(
+                    status_code=404, 
+                    content={
+                        "message": "Pin not found",
+                        "count": 0
+                    }
+                )
+        else:
+            session.commit()
+            return JSONResponse(
+                status_code=404, 
+                content={
+                    "message": "Pin not found",
+                    "count": 0
+                }
+            )
+    except Exception as e:
+        session.rollback()
+        raise
+    finally:
+        session.close() 
+
+async def put_pin_favorite(pin_id: str, user_id: str):
+    session = Session() 
+
+    try: 
+        # Query builder
+        query_select = select(pin.c.is_favorite).where(pin.c.id == pin_id)
+        result_select = session.execute(query_select)
+        data_select = result_select.first()
+
+        if data_select:
+            query_update = (
+                update(pin)
+                .where(pin.c.id == pin_id)
+                .values(is_favorite=1 if data_select.is_favorite == 0 else 0)
+            )
+
+            # Exec
+            result_update = session.execute(query_update)
+            
+            if result_update.rowcount > 0:
+                session.commit()
+                return JSONResponse(
+                    status_code=200, 
+                    content={
+                        "message": "Pin updated",
                         "count": 1
                     }
                 )
