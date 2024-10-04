@@ -5,6 +5,8 @@ from services.modules.pin.router import router_pin
 from services.modules.user.router import router_user
 from services.modules.bot_history.router import router_bot_history
 from services.modules.feedback.router import router_feedback
+from services.modules.history.router import router_history
+from services.modules.visit.router import router_visit
 from fastapi.middleware.cors import CORSMiddleware
 
 from configs.configs import cred
@@ -47,6 +49,8 @@ app.include_router(router_pin)
 app.include_router(router_user)
 app.include_router(router_bot_history)
 app.include_router(router_feedback)
+app.include_router(router_history)
+app.include_router(router_visit)
 
 @app.get("/")
 async def root():

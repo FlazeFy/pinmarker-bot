@@ -22,6 +22,7 @@ async def get_all_pin(userId:str, platform:str):
             pin.c.pin_person,
             pin.c.pin_address,
             pin.c.created_at,
+            pin.c.is_favorite,
             func.ifnull(func.count(visit.c.id), 0).label('total_visit'),
             func.max(visit.c.created_at).label('last_visit')
         ).outerjoin(
@@ -31,6 +32,7 @@ async def get_all_pin(userId:str, platform:str):
         ).group_by(
             pin.c.id
         ).order_by(
+            pin.c.is_favorite.desc(),
             pin.c.pin_category.asc(),
             pin.c.pin_name.asc()
         )

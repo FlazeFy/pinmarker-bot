@@ -2,10 +2,11 @@ from services.modules.pin.pin_model import pin
 from services.modules.visit.visit_model import visit
 from configs.configs import db
 import csv
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, and_, or_
 import io
 from firebase_admin import storage
 from datetime import datetime, timedelta
+from fastapi.responses import JSONResponse
 
 # Services
 from helpers.sqlite.template import get_user_timezone
@@ -166,4 +167,59 @@ async def get_all_visit_csv(platform:str, userId:str, teleId:str):
             return output, fileName
     else:
         return None, 'No data to export'
-            
+
+async def get_all_visit(userId:str):
+    # Query builder
+    query = select(
+        visit.c.id,
+        visit.c.visit_desc,
+        visit.c.visit_by,
+        visit.c.visit_with,
+        visit.c.created_at,
+        pin.c.pin_name
+    ).outerjoin(
+        pin, pin.c.id == visit.c.pin_id,
+    ).where(
+        or_(
+            and_(
+                pin.c.created_by == userId,
+                pin.c.deleted_at.is_(None),
+            ),
+            visit.c.created_by == userId
+        )
+    ).order_by(
+        visit.c.created_at.desc()
+    )
+
+    # Exec
+    result = db.connect().execute(query)
+    data = result.fetchall()
+    db.connect().close()
+
+    data_list = [dict(row._mapping) for row in data]
+
+    if len(data) > 0:
+        data_list_final = []
+        for row in data:
+            data_list = dict(row._mapping)
+            data_list['created_at'] = data_list['created_at'].isoformat() 
+            data_list_final.append(data_list)
+        data_list = data_list_final
+
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list,
+                "message": "Visit found",
+                "count": len(data)
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Visit not found",
+                "count": 0
+            }
+        )

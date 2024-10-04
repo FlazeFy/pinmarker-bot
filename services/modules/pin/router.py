@@ -24,6 +24,7 @@ router_pin = APIRouter()
                                 "pin_coordinate": "-6.977430240726936,107.65112376402404",
                                 "pin_category": "Restaurant",
                                 "pin_person": "Bude",
+                                "is_favorite": False,
                                 "pin_address": "D Amertha Residence",
                                 "created_at": "2024-03-18T06:47:27"
                             }

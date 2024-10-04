@@ -26,6 +26,7 @@ def test_get_all_pin_api():
         assert 'pin_category' in dt
         assert 'pin_person' in dt
         assert 'pin_address' in dt
+        assert 'is_favorite' in dt
         assert 'created_at' in dt
         assert 'last_visit' in dt
         assert 'total_visit' in dt
@@ -35,7 +36,8 @@ def test_get_all_pin_api():
         assert isinstance(dt['pin_category'], str)
         assert isinstance(dt['created_at'], str)
         assert isinstance(dt['total_visit'], int)
-        assert isinstance(dt['total_visit'] >= 0,True)
+        assert isinstance(dt['is_favorite'], bool)
+        assert dt['total_visit'] >= 0
 
         if dt['pin_desc'] is not None:
             assert isinstance(dt['pin_desc'], str)
