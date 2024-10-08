@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Path
-from services.modules.user.user_queries import get_check_context_query, get_all_user
+from services.modules.user.user_queries import get_check_context_query, get_all_user, get_profile_by_telegram_id
 from services.modules.user.validate_request_commands import post_req_register_command, post_validate_regis_command
 from helpers.docs import generate_dummy
 from enum import Enum
@@ -225,5 +225,58 @@ async def post_req_register(type:TypeEnumToken = Path(..., example="register"), 
 async def post_validate_regis(type:TypeEnumToken = Path(..., example="register"),token: str = Path(..., example=generate_dummy(type='token'),max_length=6, min_length=6), username: str = Path(..., example=generate_dummy(type='username'), max_length=36, min_length=2)):
     try:
         return await post_validate_regis_command(token=token, username=username, type=type)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_user.get("/api/v1/user/check/{tele_id}", response_model=dict, 
+    summary="Get user by telegram ID (MySql)",
+    description="This request is used to account by `tele_id`",
+    tags=["User"],
+    status_code=200,
+    responses={
+        200: {
+            "description": "Successfuly check profile by telegram account ID",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "is_found": True,
+                        "role": "user",
+                        "data": {
+                            "id": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                            "username": "flazefy",
+                            "email": "flazen.edu@gmail.com"
+                        },
+                        "message": "User found"
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "The token is wrong",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "is_found": False,
+                        "role": None,
+                        "data": None,
+                        "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController"
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_user_by_tele_id(tele_id: str = Path(..., example=generate_dummy(type='socmed_id'), max_length=10, min_length=10)):
+    try:
+        return await get_profile_by_telegram_id(teleId=tele_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

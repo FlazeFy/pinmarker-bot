@@ -257,6 +257,10 @@ async def get_global_list_api(search: str = Path(..., example=generate_dummy(typ
                                 "pin_name": "My Office - AGIT x TSEL",
                                 "pin_coor": "-6.2302963368641056,106.81831151247025",
                                 "pin_category": "Office",
+                                "pin_address": "Jl. Gatot Soebroto",
+                                "pin_person": "Leonardho R Sitanggang",
+                                "pin_call": "08114882001",
+                                "pin_email": "flazen.edu@gmail.com",
                                 "distance": 682.0905337122441
                             }
                         ],

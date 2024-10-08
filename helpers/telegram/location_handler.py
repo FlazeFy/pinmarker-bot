@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import CallbackContext
 from timezonefinder import TimezoneFinder
 tf = TimezoneFinder()
@@ -9,8 +9,8 @@ from datetime import datetime
 from helpers.sqlite.template import post_user_timezone
 
 # Services
-from services.modules.pin.pin_queries import get_pin_distance_by_coor
-from services.modules.user.user_queries import get_profile_by_telegram_id
+from helpers.telegram.repositories.repo_pin import api_get_nearset_pin_share_loc
+from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 
 async def location_command(update: Update, context: CallbackContext) -> None:
     user_location = update.message.location
@@ -25,11 +25,11 @@ async def location_command(update: Update, context: CallbackContext) -> None:
         utc_offset = int(timezone_val.utcoffset().total_seconds() / 3600)
 
         userTeleId = update.message.from_user.id
-        profile = await get_profile_by_telegram_id(teleId=userTeleId)
+        profile = await api_get_profile_by_telegram_id(teleId=userTeleId)
 
     if profile["is_found"]:
-        userId = profile['data'].id
-        username = "@"+profile["data"].username+" "
+        userId = profile["data"]['id']
+        username = "@"+profile["data"]["username"]+" "
         post_user_timezone(socmed_id=userTeleId, socmed_platform='telegram', timezone=f"{'+' if utc_offset > 0 else '-'}{utc_offset}")
     else:
         username = ""
@@ -37,7 +37,7 @@ async def location_command(update: Update, context: CallbackContext) -> None:
     msg = f"Hello, {username}your location:\nLatitude: {latitude}\nLongitude: {longitude}\nTimezone: {timezone_name} UTC{'+' if utc_offset > 0 else '-'}{utc_offset}"
     await update.message.reply_text(msg)
 
-    res = await get_pin_distance_by_coor(f"{latitude},{longitude}",userId=userId)
+    res = await api_get_nearset_pin_share_loc(userId=userId,max_dis=10000,lat=latitude,long=longitude)
     await update.message.reply_text(text=f"Showing location...\n\n{res}", parse_mode='HTML')
 
     

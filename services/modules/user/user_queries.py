@@ -76,14 +76,18 @@ async def get_profile_by_telegram_id(teleId:str):
     # Exec - User
     result = db.connect().execute(query)
     user_data = result.first()
+    user_data = dict(user_data._mapping) if user_data else None
 
     if user_data:
-        return {
-            "is_found": True,
-            "role":"user",
-            "data": user_data,
-            "message":"User found"
-        }
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "is_found": True,
+                "role":"user",
+                "data": user_data,
+                "message":"User found"
+            }
+        )
     else:
         # Query builder - Admin
         query = select(
@@ -103,19 +107,25 @@ async def get_profile_by_telegram_id(teleId:str):
         db.connect().close()
         
         if admin_data:
-            return {
-                "is_found": True,
-                "role":"admin",
-                "data": admin_data,
-                "message":"Admin found"
-            }
+            return JSONResponse(
+                status_code=200, 
+                content={
+                    "is_found": True,
+                    "role":"admin",
+                    "data": admin_data,
+                    "message":"Admin found"
+                }
+            )
         else: 
-            return {
-                "is_found": False,
-                "role": None,
-                "data": None,
-                "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
-            }
+            return JSONResponse(
+                status_code=404, 
+                content={
+                    "is_found": False,
+                    "role": None,
+                    "data": None,
+                    "message": "Hello, This telegram account is not registered yet. Sync this telegram in https://pinmarker.leonardhors.com/MyProfileController",
+                }
+            )
         
 async def get_all_user():
     # Query builder

@@ -7,7 +7,6 @@ import os
 from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
 from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
-from services.modules.user.user_queries import get_profile_by_telegram_id
 from services.modules.user.user_command import update_sign_out
 
 # Helpers
@@ -15,6 +14,7 @@ from helpers.telegram.repositories.repo_bot_history import api_get_command_histo
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
 from helpers.telegram.repositories.repo_track import api_get_last_track
 from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export, api_get_nearset_pin
+from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from helpers.telegram.typography import send_long_message
 from helpers.sqlite.template import post_ai_command
 
@@ -24,10 +24,10 @@ async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     userTeleId = query.from_user.id
-    profile = await get_profile_by_telegram_id(teleId=userTeleId)
+    profile = await api_get_profile_by_telegram_id(teleId=userTeleId)
 
     if profile["is_found"]:
-        userId = profile['data'].id
+        userId = profile['data']['id']
         role = profile['role']
         await query.answer()
 
@@ -170,10 +170,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     reply_markup = main_menu_keyboard()
     userId = update.message.from_user.id
-    profile = await get_profile_by_telegram_id(teleId=userId)
+    profile = await api_get_profile_by_telegram_id(teleId=userId)
 
     if profile["is_found"]:
-        username = profile["data"].username
+        username = profile["data"]['username']
         await update.message.reply_text(
             f"Hello @{username}, What do you want:\nOr send me your location to show your pin distance:",
             reply_markup=reply_markup

@@ -276,76 +276,17 @@ async def get_global_list_query(search:str):
                 "count": 0
             }
         )
-
-async def get_pin_distance_by_coor(coor:str, userId:str):
-    # Query builder
-    query = select(
-        pin.c.pin_name,
-        pin.c.pin_lat,
-        pin.c.pin_long,
-        pin.c.pin_person,
-        pin.c.pin_call,
-        pin.c.pin_email,
-        pin.c.pin_address
-    ).where(
-        pin.c.created_by == userId,
-    ).limit(10)
-
-    # Exec
-    result = db.connect().execute(query)
-    data = result.fetchall()
-    db.connect().close()
-    res = ''
-
-    if data:
-        pin_data = []
-        
-        for dt in data:
-            distance = calculate_distance(coor, f"{dt.pin_lat},{dt.pin_long}")
-            pin_data.append({
-                'pin_name': dt.pin_name,
-                'pin_lat': dt.pin_lat,
-                'pin_long': dt.pin_long,
-                'pin_person': dt.pin_person,
-                'pin_call': dt.pin_call,
-                'pin_email': dt.pin_email,
-                'pin_address': dt.pin_address,
-                'distance': distance
-            })
-
-        # Order by distance
-        pin_data.sort(key=lambda x: x['distance'])
-
-        res += f"<b>Showing pin by closest distance :</b>\n\n"
-        for dt in pin_data:
-            distance = dt['distance']
-            if distance > 1000:
-                distance = distance / 1000
-                distance = f"{distance:.2f} km"
-            else:
-                distance = f"{distance:.2f} m"
-
-            res += (
-                f"<b>{dt['pin_name']}</b>\n"
-                f"Distance from Me: <b>{distance}</b>\n\n"
-                f"<b>Contact</b>\n"
-                f"Person in Touch : {dt['pin_person'] or '-'}\n"
-                f"Phone Number : {dt['pin_call'] or '-'}\n"
-                f"Email : {dt['pin_email'] or '-'}\n"
-                f"Address : {dt['pin_address'] or '-'}\n\n"
-                f"========== || ========== || ==========\n\n"
-            )
-    else:
-        res += '<i>- You have no location saved -</i>'
-
-    return res
     
 async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int,limit:int):
     # Query builder
     query = select(
         pin.c.pin_name,
         pin.c.pin_category,
-        concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate')
+        concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
+        pin.c.pin_person,
+        pin.c.pin_call,
+        pin.c.pin_email,
+        pin.c.pin_address
     ).where(
         pin.c.created_by == userid
     )
@@ -366,6 +307,10 @@ async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int,limit
                 'pin_name': dt.pin_name,
                 'pin_coor': dt.pin_coordinate,
                 'pin_category': dt.pin_category,
+                'pin_address': dt.pin_address,
+                'pin_person': dt.pin_person,
+                'pin_call': dt.pin_call,
+                'pin_email': dt.pin_email,
                 'distance': dis,
             })
 

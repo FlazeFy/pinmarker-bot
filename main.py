@@ -14,7 +14,7 @@ from helpers.telegram.message_handler import start_command, button
 from helpers.telegram.location_handler import location_command
 from helpers.telegram.ai_handler import handle_ai
 
-with open('configs/telegram.json', 'r') as config_file:
+with open('configs/telegram_stage.json', 'r') as config_file:
     config = json.load(config_file)
 
 TOKEN: Final = config['TOKEN']

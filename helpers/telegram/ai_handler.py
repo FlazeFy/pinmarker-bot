@@ -3,30 +3,28 @@ from nltk.tokenize import word_tokenize
 from telegram import Update
 from telegram.ext import CallbackContext
 nltk.download('punkt')
+import os
+import io
+import random
 
 # Helper
 from helpers.telegram.typography import send_long_message
 from helpers.generator import get_city_from_coordinate
 from helpers.sqlite.template import post_ai_command
-
+from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
-
-import os
-import io
-import random
 
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query, get_pin_by_name
 from services.modules.stats.stats_queries import get_stats, get_dashboard
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
-from services.modules.user.user_queries import get_profile_by_telegram_id
 
 async def handle_ai(update: Update, context: CallbackContext):
     user_message = update.message.text.lower()
     tokens = word_tokenize(user_message)
     userTeleId = update.effective_user.id
-    profile = await get_profile_by_telegram_id(teleId=userTeleId)
+    profile = await api_get_profile_by_telegram_id(teleId=userTeleId)
 
     res = "Sorry i dont understand your message"
 
@@ -53,7 +51,7 @@ async def handle_ai(update: Update, context: CallbackContext):
     post_ai_command(socmed_id=userTeleId, socmed_platform='telegram', command=user_message)
 
     role = profile['role']
-    userId = profile['data'].id
+    userId = profile['data']['id']
 
     if any(dt in tokens for dt in greetings):
         res = "Hi there! How can I assist you today?"

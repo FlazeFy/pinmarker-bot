@@ -1,5 +1,6 @@
 /venv
 /configs/telegram.json
+/configs/telegram_stage.json
 /configs/email.json
 reports/csv/report-activity.csv
 *DS_Store
