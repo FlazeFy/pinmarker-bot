@@ -634,15 +634,17 @@ async def get_pin_detail_history_by_id_api(id: str = Path(..., example=generate_
             "content": {
                 "application/json": {
                     "example": {
-                        "data": {
-                            "id": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
-                            "pin_name": "My Kost",
-                            "pin_desc": "Kamar A66",
-                            "pin_lat": "-6.226838579766097",
-                            "pin_long": "106.82157923228753",
-                            "distance_to_meters": 9.46,
-                            "created_at": "2024-03-16T01:47:22",
-                        },
+                        "data": [
+                            {
+                                "id": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                                "pin_name": "My Kost",
+                                "pin_desc": "Kamar A66",
+                                "pin_lat": "-6.226838579766097",
+                                "pin_long": "106.82157923228753",
+                                "distance_to_meters": 9.46,
+                                "created_at": "2024-03-16T01:47:22",
+                            },
+                        ],
                         "message": "Pin found",
                         "count": 1
                     }

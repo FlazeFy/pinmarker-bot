@@ -275,7 +275,7 @@ async def post_validate_regis(type:TypeEnumToken = Path(..., example="register")
             }
         }
     })
-async def get_user_by_tele_id(tele_id: str = Path(..., example=generate_dummy(type='socmed_id'), max_length=10, min_length=10)):
+async def get_user_by_tele_id_api(tele_id: str = Path(..., example=generate_dummy(type='socmed_id'), max_length=10, min_length=10)):
     try:
         return await get_profile_by_telegram_id(teleId=tele_id)
     except Exception as e:
