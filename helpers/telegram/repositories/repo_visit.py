@@ -34,7 +34,9 @@ async def api_get_visit_history(user_id: str, days:str):
                                 datetimeCol = f"Visit At UTC({data['with_timezone']})"
 
                             writer.writerow([
-                                "Pin Name", 
+                                "Pin Name",
+                                "Pin Category",
+                                "Coordinate", 
                                 "Description",
                                 "Visit By",
                                 "Companion",
@@ -42,10 +44,12 @@ async def api_get_visit_history(user_id: str, days:str):
                             ])
 
                         writer.writerow([
-                            dt['pin_name'], 
-                            dt['visit_desc'],
+                            dt['pin_name'] or '-',
+                            dt['pin_category'],
+                            dt['pin_coordinate'] or '-', 
+                            dt['visit_desc'] or '-',
                             dt['visit_by'],
-                            dt['visit_with'],
+                            dt['visit_with'] or '-',
                             dt['created_at']
                         ])
 

@@ -4,16 +4,15 @@ import io
 import os
 
 # Services
-from services.modules.visit.visit_queries import get_all_visit_csv
 from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.user.user_command import update_sign_out
-
 # Helpers
 from helpers.telegram.repositories.repo_bot_history import api_get_command_history
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
+from helpers.telegram.repositories.repo_pin import api_get_all_pin_name
 from helpers.telegram.repositories.repo_track import api_get_last_track
-from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export, api_get_nearset_pin
+from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export, api_get_nearset_pin,api_get_all_pin_name
 from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from helpers.telegram.repositories.repo_visit import api_get_visit_history
 from helpers.telegram.typography import send_long_message
@@ -75,7 +74,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"<i>- {res} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')         
         
-        # if query.data == '2':
+        elif query.data == '2':
+            res = await api_get_all_pin_name(userId=userId)
+            message_chunks = send_long_message(res)
+            for chunk in message_chunks:
+                await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
 
         elif query.data == '3' or query.data == '3/all':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/History visit last 30 days')

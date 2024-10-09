@@ -14,6 +14,7 @@ from helpers.sqlite.template import post_ai_command
 from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
 from helpers.telegram.repositories.repo_visit import api_get_visit_history
+from helpers.telegram.repositories.repo_pin import api_get_pin_detail_by_name, api_get_all_pin_name
 
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query, get_pin_by_name
@@ -62,6 +63,21 @@ async def handle_ai(update: Update, context: CallbackContext):
     elif any(dt in tokens for dt in thanks):
         res = ['Your welcome','At my pleasure']
         await update.message.reply_text(random.choice(res))
+    elif any(dt in tokens for dt in ['detail']):
+        search = ' '.join(tokens).replace("detail","").strip()
+
+        if search == "":
+            res = await api_get_all_pin_name(userId=userId)
+            message_chunks = send_long_message(res)
+            for chunk in message_chunks:
+                await update.message.reply_text(f"Can you specify more detail of the pin by this name...\n\n{chunk}", parse_mode='HTML')
+        else:
+            res, lat, long = await api_get_pin_detail_by_name(userId=userId,pin_name=search)
+            message_chunks = send_long_message(res)
+            for chunk in message_chunks:
+                await update.message.reply_text(f"{random.choice(present_respond)} pin detail...\n\n{chunk}", parse_mode='HTML')
+            if lat and long:
+                await update.message.reply_location(latitude=lat, longitude=long)
     elif any(dt in tokens for dt in self_command):
         if profile["is_found"]:
             # Personal data

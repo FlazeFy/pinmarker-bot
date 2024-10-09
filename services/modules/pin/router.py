@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Path
-from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id,get_pin_distance_to_my_personal_pin_by_id,get_trash_pin,get_nearest_global_pin_query
+from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id_or_name,get_pin_distance_to_my_personal_pin_by_id,get_trash_pin,get_nearest_global_pin_query
 from services.modules.pin.pin_commands import soft_delete_pin_by_id,recover_pin_by_id,hard_delete_pin_by_id,put_pin_favorite
 from helpers.docs import generate_dummy
 
@@ -686,7 +686,72 @@ async def get_global_pin_by_list_id_api(request : Request):
     })
 async def get_pin_detail_history_by_id_api(id: str = Path(..., example=generate_dummy(type='pin_id')),user_id: str = Path(..., example=generate_dummy(type='user_id'))):
     try:
-        return await get_pin_detail_history_by_id(pin_id=id, user_id=user_id)
+        return await get_pin_detail_history_by_id_or_name(pin_context=id, user_id=user_id,search_by='id')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.get("/api/v1/pin/detail/name/{pin_name}/{user_id}", response_model=dict, 
+    summary="Get Pin Detail and Visit History by Pin Name (MySql)",
+    description="This request is used to get pin detail and visit history based on given pin `pin_name` and `user_id`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch pin detail and history",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "pin_name": "My Kost",
+                            "pin_desc": "Kamar A66",
+                            "pin_category": "Personal",
+                            "pin_lat": "-6.226838579766097",
+                            "pin_long": "106.82157923228753",
+                            "pin_person": "Leonardho R Sitanggang",
+                            "pin_email": "flazen.edu@gmail.com",
+                            "pin_call": "08114882001",
+                            "pin_address": "",
+                            "created_at": "2024-03-16T01:47:22",
+                            "updated_at": "2024-08-20T02:52:34"
+                        },
+                        "message": "Pin found",
+                        "history": [
+                                {
+                                    "visit_desc": "asdads",
+                                    "visit_by": "Public Transportation",
+                                    "visit_with": "mm",
+                                    "created_at": "2024-07-15T11:20:00"
+                                },
+                            ]
+                        }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Pin not found",
+                        "history": None
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_pin_detail_history_by_pin_name_api(pin_name: str = Path(..., example=generate_dummy(type='pin_name')),user_id: str = Path(..., example=generate_dummy(type='user_id'))):
+    try:
+        return await get_pin_detail_history_by_id_or_name(pin_context=pin_name, user_id=user_id, search_by='name')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

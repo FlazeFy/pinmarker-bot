@@ -700,9 +700,23 @@ async def get_global_pin_by_list_id(list_ids:str):
             }
         )
     
-async def get_pin_detail_history_by_id(pin_id:str, user_id:str):
+async def get_pin_detail_history_by_id_or_name(pin_context:str, user_id:str, search_by:str):
     # Query builder Detail
+    if search_by == 'id':
+        where = and_(
+            pin.c.deleted_at.is_(None),
+            pin.c.id == pin_context,
+            pin.c.created_by == user_id
+        )
+    elif search_by == 'name':
+        where = and_(
+            pin.c.deleted_at.is_(None),
+            pin.c.pin_name == pin_context,
+            pin.c.created_by == user_id
+        )
+
     query_detail = select(
+        pin.c.id,
         pin.c.pin_name,
         pin.c.pin_desc,
         pin.c.pin_category,
@@ -714,14 +728,8 @@ async def get_pin_detail_history_by_id(pin_id:str, user_id:str):
         pin.c.pin_address,
         pin.c.created_at,
         pin.c.updated_at
-    ).where(
-        and_(
-            pin.c.deleted_at.is_(None),
-            pin.c.id == pin_id,
-            pin.c.created_by == user_id
-        )
-    )
-
+    ).where(where)
+    
     # Exec Detail
     result_detail = db.connect().execute(query_detail)
     data_detail = result_detail.first()
@@ -735,7 +743,7 @@ async def get_pin_detail_history_by_id(pin_id:str, user_id:str):
             visit.c.visit_with,
             visit.c.created_at,
         ).where(
-            visit.c.pin_id == pin_id
+            visit.c.pin_id == data_detail.id
         )
 
         # Exec visit
