@@ -57,7 +57,7 @@ async def api_get_all_pin(user_id: str):
                     file_bytes.name = 'Pin_List.csv'
 
                     return file_bytes, 'file', True
-                elif data['count'] > 0:
+                else:
                     res = ''
                     for item in data['data']:
                         res += (

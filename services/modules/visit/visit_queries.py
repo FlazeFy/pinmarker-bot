@@ -1,5 +1,6 @@
 from services.modules.pin.pin_model import pin
 from services.modules.visit.visit_model import visit
+from services.modules.user.user_model import user
 from configs.configs import db
 import csv
 from sqlalchemy import select, desc, and_, or_
@@ -14,63 +15,72 @@ from helpers.sqlite.template import get_user_timezone
 now = datetime.now()
 now_str = now.strftime("%Y-%m-%d%H:%M:%S")
 
-async def get_all_visit_last_day(userId:str, teleId:str):
-    days = 30
-    thirty_days_ago = datetime.now() - timedelta(days=days)
-
+async def get_all_visit_last_day(userId:str, days:str):
     # Query builder
     query = select(
         pin.c.pin_name, 
         visit.c.visit_desc, 
         visit.c.visit_by, 
         visit.c.visit_with, 
-        visit.c.created_at, 
+        visit.c.created_at
     ).join(
         pin, pin.c.id == visit.c.pin_id
     ).where(
-        visit.c.created_by == userId,
-        visit.c.created_at >= thirty_days_ago
+        visit.c.created_by == userId
     ).order_by(
         desc(visit.c.created_at)
     )
 
+    if days != 'all':
+        days_ago = datetime.now() - timedelta(days=int(days))
+        query = query.where(visit.c.created_at >= days_ago)
+
     # Exec
     result = db.connect().execute(query)
     data = result.fetchall()
-    db.connect().close()
 
-    timezone = get_user_timezone(socmed_id=teleId, socmed_platform='telegram')
-    notestz =""
+    if data:
+        query_user = select(
+            user.c.telegram_user_id
+        ).where(
+            user.c.id == userId
+        )
+        result_user = db.connect().execute(query_user)
+        data_user = result_user.first()
+        db.connect().close()
 
-    if timezone:
-        notestz = f" based UTC{timezone}"
-        timezone_offset = int(timezone[:0] + timezone[0+1:])
+        timezone = get_user_timezone(socmed_id=data_user.telegram_user_id, socmed_platform='telegram')
+        timezone_offset = 0
+        if timezone:
+            timezone_offset = int(timezone[:0] + timezone[0+1:])
 
-    if len(data) != 0:
-        res = f"Here is the visit history for last {days}{notestz}:\n"
-        day_before = ''
+        data_list = [dict(row._mapping) for row in data]
 
-        for dt in data:    
-            if isinstance(dt.created_at, str):
-                dt_created_at = datetime.strptime(dt.created_at, '%Y-%m-%d %H:%m:%S')
-            else:
-                dt_created_at = dt.created_at 
+        data_list_final = []
+        for row in data_list:
+            row['created_at'] = (row['created_at'] + timedelta(hours=timezone_offset)).isoformat() 
+            data_list_final.append(row)            
 
-            if timezone:
-                dt_created_at = dt_created_at + timedelta(hours=timezone_offset)
-            
-            if day_before == '' or day_before != dt_created_at.strftime('%d %b %Y'):
-                day_before = dt_created_at.strftime('%d %b %Y')
-                res += f"\n<b>{day_before}</b>\n"
-                date = dt_created_at.strftime('%H:%M')
-            else: 
-                date = dt_created_at.strftime('%H:%M')
-                        
-            res += f"- Visit at {dt.pin_name} using {dt.visit_by} {'with '+dt.visit_with+' ' if dt.visit_with else ''}at {date}\n"
-
-        return res
-    else:
-        return '<i>- No visit found -</i>'
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": data_list_final,
+                "message": "Visit history found",
+                "count": len(data_list_final),
+                "with_timezone": timezone
+            }
+        )
+    else: 
+        db.connect().close()
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data": None,
+                "message": "Visit history not found",
+                "count": 0,
+                "with_timezone": None
+            }
+        )
 
 async def get_all_visit_csv(platform:str, userId:str, teleId:str):
     # Query builder

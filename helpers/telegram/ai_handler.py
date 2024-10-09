@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 nltk.download('punkt')
 import os
-import io
+import re
 import random
 
 # Helper
@@ -13,12 +13,12 @@ from helpers.generator import get_city_from_coordinate
 from helpers.sqlite.template import post_ai_command
 from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from helpers.telegram.repositories.repo_stats import api_get_dashboard
+from helpers.telegram.repositories.repo_visit import api_get_visit_history
 
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query, get_pin_by_name
 from services.modules.stats.stats_queries import get_stats, get_dashboard
 from services.modules.stats.stats_capture import get_stats_capture
-from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
 
 async def handle_ai(update: Update, context: CallbackContext):
     user_message = update.message.text.lower()
@@ -35,7 +35,7 @@ async def handle_ai(update: Update, context: CallbackContext):
     self_command = ['my']
     location_command = ['marker','pin']
     stats_command = ['stats','statistic','chart','summary']
-    history_command = ['history','activity','visit']
+    visit_command = ['visit']
     where_command = ['where','locate','find','search']
     where_command_region = ['city','town','village','region']
     topic_self_command = ["i'm","im"]
@@ -87,16 +87,32 @@ async def handle_ai(update: Update, context: CallbackContext):
                     await update.message.reply_text(f"{random.choice(present_respond)} dashboard...\n\n{res}", parse_mode='HTML')
             
             # Visit history
-            elif any(dt in  tokens for dt in history_command):
-                res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
-                csv_content, file_name = await get_all_visit_csv(platform='telegram',userId=userId,teleId=userTeleId)
-                if csv_content and file_name:
-                    file = io.BytesIO(csv_content.encode('utf-8'))
-                    file.name = file_name     
-                    await update.message.reply_text(f"{random.choice(present_respond)} stats...\n\n{res}", parse_mode='HTML')
-                    await update.message.reply_document(document=file, caption="Generate CSV file of history...\n\n")
+            elif any(dt in tokens for dt in visit_command):
+                def extract_days_from_tokens(tokens):
+                    text = ' '.join(tokens)
+                    match = re.search(r'(\d+)\s+day(s)?', text, re.IGNORECASE)
+                    if match:
+                        return str(match.group(1))
+                    else:
+                        return 'all'
+                    
+                search_tokens = [token for token in tokens if token not in visit_command + self_command]
+                days = extract_days_from_tokens(tokens)
+                res, type = await api_get_visit_history(user_id=userId, days=days)
+                if type == 'file':
+                    if len(res) == 1:
+                        await update.message.reply_text("Generate Exported CSV file of visit history...")     
+                    else:     
+                        await update.message.reply_text("Generate Exported CSV file of visit history...\nSpliting into {len(res)} parts. Each of these have maximum 100 history")     
+                    for idx, dt in enumerate(res):
+                        await update.message.reply_document(document=dt, caption=f"Part-{idx+1}\n")
+                    await update.message.reply_text("Export finished")
+                elif type == 'text':
+                    message_chunks = send_long_message(res)
+                    for chunk in message_chunks:
+                        await update.message.reply_text(chunk,parse_mode='HTML')
                 else:
-                    await update.message.reply_text(f"Export failed, {file_name}", parse_mode='HTML')
+                    await update.message.reply_text("Error processing the response",parse_mode='HTML') 
         else:
             await update.message.reply_text("You're not signed in yet")
 

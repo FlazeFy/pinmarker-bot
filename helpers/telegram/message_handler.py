@@ -4,7 +4,7 @@ import io
 import os
 
 # Services
-from services.modules.visit.visit_queries import get_all_visit_last_day, get_all_visit_csv
+from services.modules.visit.visit_queries import get_all_visit_csv
 from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.user.user_command import update_sign_out
@@ -15,6 +15,7 @@ from helpers.telegram.repositories.repo_stats import api_get_dashboard
 from helpers.telegram.repositories.repo_track import api_get_last_track
 from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export, api_get_nearset_pin
 from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
+from helpers.telegram.repositories.repo_visit import api_get_visit_history
 from helpers.telegram.typography import send_long_message
 from helpers.sqlite.template import post_ai_command
 
@@ -76,27 +77,25 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # if query.data == '2':
 
-        elif query.data == '3':
-            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/History visit')
-            res = await get_all_visit_last_day(userId=userId, teleId=userTeleId)
-            message_chunks = send_long_message(res)
+        elif query.data == '3' or query.data == '3/all':
+            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/History visit last 30 days')
+            res, type = await api_get_visit_history(user_id=userId, days='30' if query.data == '3' else 'all')
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            for chunk in message_chunks:
-                await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
-            await context.bot.send_message(chat_id=query.message.chat_id, text="Please choose an option:", reply_markup=reply_markup)
-
-        elif query.data == '3/csv':
-            post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/History visit in csv')
-            csv_content, file_name = await get_all_visit_csv(platform='telegram', userId=userId, teleId=userTeleId)
-            if csv_content and file_name:
-                file = io.BytesIO(csv_content.encode('utf-8'))
-                file.name = file_name        
-                keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await query.message.reply_document(document=file, caption="Generate CSV file of history...\n\n", reply_markup=reply_markup)
+            if type == 'file':
+                if len(res) == 1:
+                    await query.edit_message_text(text=f"Generate Exported CSV file of visit history...", parse_mode='HTML')     
+                else:     
+                    await query.edit_message_text(text=f"Generate Exported CSV file of visit history...\nSpliting into {len(res)} parts. Each of these have maximum 100 history", parse_mode='HTML')     
+                for idx, dt in enumerate(res):
+                    await query.message.reply_document(document=dt, caption=f"Part-{idx+1}\n")
+                await query.edit_message_text(text=f"Export finished", parse_mode='HTML',reply_markup= main_menu_keyboard(),)
+            elif type == 'text':
+                message_chunks = send_long_message(res)
+                for chunk in message_chunks:
+                    await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML',reply_markup=reply_markup)
             else:
-                await query.edit_message_text(text=f"<i>- {file_name} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')
+                await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')   
 
         elif query.data == '4':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Dashboard')
@@ -188,8 +187,8 @@ def main_menu_keyboard():
         [InlineKeyboardButton("Show nearest pin", callback_data='1/near')],
         [InlineKeyboardButton("Export pin", callback_data='1/export')],
         [InlineKeyboardButton("Show detail pin", callback_data='2')],
-        [InlineKeyboardButton("History visit", callback_data='3')],
-        [InlineKeyboardButton("History visit in CSV ", callback_data='3/csv')],
+        [InlineKeyboardButton("History visit last 30 days", callback_data='3')],
+        [InlineKeyboardButton("All history visit", callback_data='3/all')],
         [InlineKeyboardButton("Dashboard", callback_data='4')],
         [InlineKeyboardButton("Stats", callback_data='5')],
         [InlineKeyboardButton("Last Live Tracker Position", callback_data='7')],
