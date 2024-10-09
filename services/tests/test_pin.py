@@ -193,6 +193,7 @@ def test_get_nearest_pin_api():
     # Check the data in object
     for dt in data['data']:
         assert 'pin_name' in dt
+        assert 'pin_desc' in dt
         assert 'pin_coor' in dt
         assert 'pin_category' in dt
         assert 'distance' in dt
@@ -208,12 +209,63 @@ def test_get_nearest_pin_api():
 
         if dt['pin_address'] is not None:
             assert isinstance(dt['pin_address'], str)
+        if dt['pin_desc'] is not None:
+            assert isinstance(dt['pin_desc'], str)
         if dt['pin_person'] is not None:
             assert isinstance(dt['pin_person'], str)
         if dt['pin_call'] is not None:
             assert isinstance(dt['pin_call'], str)
         if dt['pin_email'] is not None:
             assert isinstance(dt['pin_email'], str)
+
+def test_get_nearest_global_pin_api():
+    lat = "-6.2333934867861975"
+    long = "106.82363788271587"
+    payload = {
+        "max_distance": 5000,
+        "limit": 5
+    }
+
+    response = requests.post(f"{base_url}/api/v1/pin_global/nearest/{lat}/{long}",json=payload)
+    data = response.json()
+
+    # Check the status code
+    assert response.status_code == 200    
+
+    # Check message key in object body
+    assert 'message' in data
+    assert isinstance(data['message'], str), "The key 'message' should be an string"
+    
+    # Check data key in object body
+    assert 'data' in data
+    assert isinstance(data['data'], object), "The key 'data' should be an object"
+
+    # Check is_found_near key in object body
+    assert 'is_found_near' in data 
+    assert isinstance(data['is_found_near'], bool), "The key 'is_found_near' should be a bool"
+    
+    # Check the data in object
+    for dt in data['data']:
+        assert 'pin_name' in dt
+        assert 'pin_desc' in dt
+        assert 'pin_coor' in dt
+        assert 'pin_category' in dt
+        assert 'distance' in dt
+        assert 'pin_address' in dt 
+        assert 'added_at' in dt 
+        assert 'added_by' in dt 
+        
+        assert isinstance(dt['pin_name'], str)
+        assert isinstance(dt['pin_coor'], str)
+        assert isinstance(dt['pin_category'], str)
+        assert isinstance(dt['added_at'], str)
+        assert isinstance(dt['added_by'], str)
+        assert isinstance(dt['distance'], float)
+
+        if dt['pin_address'] is not None:
+            assert isinstance(dt['pin_address'], str)
+        if dt['pin_desc'] is not None:
+            assert isinstance(dt['pin_desc'], str)
 
 def test_get_global_pin_by_list_id_api():
     payload = {

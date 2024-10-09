@@ -11,6 +11,7 @@ from helpers.sqlite.template import post_user_timezone
 # Services
 from helpers.telegram.repositories.repo_pin import api_get_nearset_pin_share_loc
 from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
+from helpers.telegram.typography import send_long_message
 
 async def location_command(update: Update, context: CallbackContext) -> None:
     user_location = update.message.location
@@ -27,17 +28,21 @@ async def location_command(update: Update, context: CallbackContext) -> None:
         userTeleId = update.message.from_user.id
         profile = await api_get_profile_by_telegram_id(teleId=userTeleId)
 
-    if profile["is_found"]:
+    if profile:
         userId = profile["data"]['id']
-        username = "@"+profile["data"]["username"]+" "
+        username = "@"+profile["data"]["username"]
         post_user_timezone(socmed_id=userTeleId, socmed_platform='telegram', timezone=f"{'+' if utc_offset > 0 else '-'}{utc_offset}")
     else:
-        username = ""
+        username = update.message.from_user.username
+        userId = None
 
-    msg = f"Hello, {username}your location:\nLatitude: {latitude}\nLongitude: {longitude}\nTimezone: {timezone_name} UTC{'+' if utc_offset > 0 else '-'}{utc_offset}"
+    msg = f"Hello, {username} your location:\nLatitude: {latitude}\nLongitude: {longitude}\nTimezone: {timezone_name} UTC{'+' if utc_offset > 0 else '-'}{utc_offset}"
     await update.message.reply_text(msg)
 
     res = await api_get_nearset_pin_share_loc(userId=userId,max_dis=10000,lat=latitude,long=longitude)
-    await update.message.reply_text(text=f"Showing location...\n\n{res}", parse_mode='HTML')
+    await update.message.reply_text(text=f"Showing {'global ' if not profile else ''}location...\n\n", parse_mode='HTML')
+    message_chunks = send_long_message(res)
+    for chunk in message_chunks:
+        await update.message.reply_text(chunk, parse_mode='HTML')
 
     

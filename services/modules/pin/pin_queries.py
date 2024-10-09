@@ -282,13 +282,17 @@ async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int,limit
     query = select(
         pin.c.pin_name,
         pin.c.pin_category,
+        pin.c.pin_desc,
         concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
         pin.c.pin_person,
         pin.c.pin_call,
         pin.c.pin_email,
         pin.c.pin_address
     ).where(
-        pin.c.created_by == userid
+        and_(
+            pin.c.created_by == userid,
+            pin.c.deleted_at.is_(None)
+        )
     )
 
     #Exec
@@ -305,6 +309,7 @@ async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int,limit
             found = True
             found_list.append({
                 'pin_name': dt.pin_name,
+                'pin_desc': dt.pin_desc,
                 'pin_coor': dt.pin_coordinate,
                 'pin_category': dt.pin_category,
                 'pin_address': dt.pin_address,
@@ -312,6 +317,73 @@ async def get_nearest_pin_query(lat:str, long:str, userid:str, max_dis:int,limit
                 'pin_call': dt.pin_call,
                 'pin_email': dt.pin_email,
                 'distance': dis,
+            })
+
+        if len(found_list) >= limit:
+            break
+
+    found_list.sort(key=lambda dt: dt['distance'])
+
+    if len(found_list) > 0:
+        return JSONResponse(
+            status_code=200, 
+            content={
+                "data": found_list,
+                "message": "Pin found",
+                "is_found_near": found,
+                "count": len(found_list)
+            }
+        )
+    else:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "data": None,
+                "message": "Pin not found",
+                "is_found_near": found,
+                "count": 0
+            }
+        )
+    
+async def get_nearest_global_pin_query(lat:str, long:str, max_dis:int,limit:int):
+    # Query builder
+    query = select(
+        pin.c.pin_name,
+        pin.c.pin_category,
+        pin.c.pin_desc,
+        concat(pin.c.pin_lat, ',', pin.c.pin_long).label('pin_coordinate'),
+        pin.c.pin_address,
+        user.c.username.label('added_by'),
+        global_list_pin_relation.c.created_at.label('added_at')
+    ).join(
+        user, user.c.id == pin.c.created_by
+    ).join(
+        global_list_pin_relation, global_list_pin_relation.c.pin_id == pin.c.id
+    ).where(
+        pin.c.deleted_at.is_(None)
+    )
+
+    #Exec
+    result = db.connect().execute(query)
+    data = result.fetchall()
+    db.connect().close()
+    found = False
+    found_list = []
+
+    for idx, dt in enumerate(data, start=1):
+        my_coor = f"{lat},{long}"
+        dis = calculate_distance(my_coor, dt.pin_coordinate)
+        if dis < max_dis:
+            found = True
+            found_list.append({
+                'pin_name': dt.pin_name,
+                'pin_desc': dt.pin_desc,
+                'pin_coor': dt.pin_coordinate,
+                'pin_category': dt.pin_category,
+                'pin_address': dt.pin_address,
+                'distance': dis,
+                'added_by': dt.added_by,
+                'added_at': dt.added_at.isoformat()
             })
 
         if len(found_list) >= limit:

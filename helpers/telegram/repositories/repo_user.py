@@ -9,9 +9,12 @@ async def api_get_profile_by_telegram_id(teleId: str):
             response.raise_for_status()
             data = response.json()
             return data
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 404:
+            return None
+        else:
+            return "Something went wrong"
     except requests.exceptions.RequestException as e:
-        err_msg = f"Something went wrong: {e}"
-        return err_msg
+        return "Something went wrong"
     except KeyError:
-        err_msg = "Error processing the response"
-        return err_msg
+        return "Something went wrong"

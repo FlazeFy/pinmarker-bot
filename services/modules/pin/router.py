@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Path
-from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id,get_pin_distance_to_my_personal_pin_by_id,get_trash_pin
+from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id,get_pin_distance_to_my_personal_pin_by_id,get_trash_pin,get_nearest_global_pin_query
 from services.modules.pin.pin_commands import soft_delete_pin_by_id,recover_pin_by_id,hard_delete_pin_by_id,put_pin_favorite
 from helpers.docs import generate_dummy
 
@@ -255,6 +255,7 @@ async def get_global_list_api(search: str = Path(..., example=generate_dummy(typ
                         "data": [
                             {
                                 "pin_name": "My Office - AGIT x TSEL",
+                                "pin_desc": "Lorem ipsum",
                                 "pin_coor": "-6.2302963368641056,106.81831151247025",
                                 "pin_category": "Office",
                                 "pin_address": "Jl. Gatot Soebroto",
@@ -303,6 +304,71 @@ async def get_nearest_pin_api(
     try:
         data = await request.json()
         return await get_nearest_pin_query(lat=lat, long=long, userid=data.get('user_id'), max_dis=data.get('max_distance'), limit=data.get('limit'))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.post("/api/v1/pin_global/nearest/{lat}/{long}", response_model=dict, 
+    summary="Get Nearest Global Pin (MySql)",
+    description="This request is used to get nearest pin based on given `lat`, `long`, `max_distance` from the coordinate, and `limit`",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful fetch all global pin by lat, long, max distance from the coordinate, and limit",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": [
+                            {
+                                "pin_name": "My Office - AGIT x TSEL",
+                                "pin_desc": "Lorem ipsum",
+                                "pin_coor": "-6.2302963368641056,106.81831151247025",
+                                "pin_category": "Office",
+                                "pin_address": "Jl. Gatot Soebroto",
+                                "pin_person": "Leonardho R Sitanggang",
+                                "pin_call": "08114882001",
+                                "pin_email": "flazen.edu@gmail.com",
+                                "distance": 682.0905337122441
+                            }
+                        ],
+                        "message": "Global Pin found",
+                        "is_found_near": True,
+                        "count": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Pin not found for given lat, long, max distance from the coordinate, and limit",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": None,
+                        "message": "Global Pin not found",
+                        "is_found_near": False,
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_nearest_global_pin_api(
+        request : Request,
+        lat: str = Path(..., example=generate_dummy(type='lat'), max_length=36, min_length=4), 
+        long:str = Path(..., example=generate_dummy(type='long'), max_length=37, min_length=5), 
+    ):
+    try:
+        data = await request.json()
+        return await get_nearest_global_pin_query(lat=lat, long=long, max_dis=data.get('max_distance'), limit=data.get('limit'))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
