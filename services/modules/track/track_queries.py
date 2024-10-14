@@ -2,6 +2,10 @@ from firebase_admin import db
 from datetime import datetime
 from helpers.converter import calculate_distance
 from fastapi.responses import JSONResponse
+from configs.configs import db as sql_db
+from sqlalchemy import select
+from services.modules.pin.pin_model import pin
+from helpers.converter import calculate_distance
 
 async def get_last_tracker_position_api(userId:str):
     # Attribute
@@ -27,6 +31,74 @@ async def get_last_tracker_position_api(userId:str):
             content={
                 "data":None,
                 "message": "No Track found",
+            }
+        )
+    
+async def get_last_tracker_position_related_pin_query(userId:str):
+    # Attribute
+    userId = 'fcd3f23e-e5aa-11ee-892a-3216422910e9'
+    ref = db.reference('track_live_'+userId)
+
+    # Order child index
+    query = ref.order_by_child('created_at').limit_to_last(1)
+    data = query.get()
+
+    if data:
+        data_values = list(data.values())
+
+        query = select(
+            pin.c.pin_name,
+            pin.c.pin_lat,
+            pin.c.pin_long,
+            pin.c.pin_category,
+        ).where(
+            pin.c.created_by == userId,
+        ).order_by(
+            pin.c.pin_category.asc(),
+            pin.c.pin_name.asc()
+        )
+
+        # Exec
+        result = sql_db.connect().execute(query)
+        data_pin = result.fetchall()
+        sql_db.connect().close()
+
+        if len(data) != 0:
+            data_list = [dict(row._mapping) for row in data_pin]
+            data_list_final = []
+            for row in data_pin:
+                data_list = dict(row._mapping)
+                data_list['distance_to_meters'] = float(round(calculate_distance(f"{data_values[0]['track_lat']},{data_values[0]['track_long']}",f"{data_list['pin_lat']},{data_list['pin_long']}"),2))
+                data_list_final.append(data_list)
+            data_list = data_list_final
+
+            return JSONResponse(
+                status_code=200, 
+                content={
+                    "data_related_pin": data_list,
+                    "data_track": data_values[0],
+                    "message": "Related Pin X Track found",
+                    "count": len(data_list)
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=200, 
+                content={
+                    "data_related_pin": None,
+                    "data_track": data_values[0],
+                    "message": "Track found",
+                    "count": 0
+                }
+            )
+    else:
+        return JSONResponse(
+            status_code=404, 
+            content={
+                "data_related_pin": None,
+                "data_track": None,
+                "message": "Related Pin X Track Pin found",
+                "count": 0
             }
         )
 
@@ -79,7 +151,7 @@ async def get_tracks_period(userId: str, start_time: datetime = None, end_time: 
     if data:
         data_values = list(data.values())
         return JSONResponse(
-            status_code=201, 
+            status_code=200, 
             content={
                 "data": data_values,
                 "message": "Track journey found",

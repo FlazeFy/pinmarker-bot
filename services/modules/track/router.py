@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Path
-from services.modules.track.track_queries import get_tracks, get_tracks_period, get_last_tracker_position_api, get_total_distance_by_month_query, get_total_distance_by_time_query, get_activity_around_coordinate_query
+from services.modules.track.track_queries import get_tracks, get_tracks_period, get_last_tracker_position_api, get_total_distance_by_month_query, get_total_distance_by_time_query, get_activity_around_coordinate_query,get_last_tracker_position_related_pin_query
 from datetime import datetime
 from pydantic import BaseModel
 from helpers.docs import generate_dummy
@@ -114,6 +114,69 @@ async def get_current_track(user_id: str = Path(..., example=generate_dummy(type
 async def get_last_track(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
     try:
         return await get_last_tracker_position_api(userId=user_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_track.get("/api/v1/track/last_x_pin/{user_id}", response_model=dict, 
+    summary="Get Last Track (Firebase Realtime)",
+    description="This request is used to get last track based on given `user_id`",
+    tags=["Track"],
+    responses={
+        200: {
+            "description": "Successful fetch last track for given user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data_track":
+                        {
+                            "battery_indicator": 48,
+                            "created_at": "2024-09-13T23:46:00.561424",
+                            "created_by": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                            "track_lat": -6.226764,
+                            "track_long": 106.8220981,
+                            "track_type": "live"
+                        },
+                        "data_related_pin": [
+                            {
+                                "pin_name": "Warteg D Amertha",
+                                "pin_lat": "-6.977430240726936",
+                                "pin_long": "107.65112376402404",
+                                "pin_category": "Restaurant",
+                                "distance_to_meters": 123905.68
+                            }
+                        ],
+                        "message": "Related Pin X Track found",
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Track not found for given user id",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data_related_pin": None,
+                        "data_track": None,
+                        "message": "Related Pin X Track Pin found",
+                        "count": 0
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def get_last_track_related_pin_api(user_id: str = Path(..., example=generate_dummy(type='user_id'), max_length=36, min_length=36)):
+    try:
+        return await get_last_tracker_position_related_pin_query(userId=user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

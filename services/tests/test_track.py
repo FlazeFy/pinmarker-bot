@@ -170,3 +170,48 @@ def test_get_track_journey():
         assert isinstance(item['track_lat'], float)
         assert isinstance(item['track_long'], float)
         assert isinstance(item['track_type'], str)
+
+def test_get_last_track_related_pin_api():
+    response = requests.get(f"{base_url}/api/v1/track/last_x_pin/{user_id}")
+    data = response.json()
+
+    # Check the status code
+    assert response.status_code == 200    
+
+    # Check message key in object body
+    assert 'message' in data
+    assert isinstance(data['message'], str), "The key 'message' should be an string"
+    
+    # Check data key in object body
+    assert 'data_track' in data
+    assert 'data_related_pin' in data
+    assert isinstance(data['data_track'], object), "The key 'data_track' should be a object"
+    assert isinstance(data['data_related_pin'], list), "The key 'data_related_pin' should be a object"
+    
+    # Check the data in object
+    assert 'battery_indicator' in data['data_track']
+    assert 'created_at' in data['data_track']
+    assert 'created_by' in data['data_track']
+    assert 'track_lat' in data['data_track']
+    assert 'track_long' in data['data_track']
+    assert 'track_type' in data['data_track']
+    
+    assert isinstance(data['data_track']['battery_indicator'], int)
+    assert isinstance(data['data_track']['created_at'], str)
+    assert isinstance(data['data_track']['created_by'], str)
+    assert isinstance(data['data_track']['track_lat'], float)
+    assert isinstance(data['data_track']['track_long'], float)
+    assert isinstance(data['data_track']['track_type'], str)
+
+    for item in data['data_related_pin']:
+        assert 'pin_name' in item
+        assert 'pin_lat' in item
+        assert 'pin_long' in item
+        assert 'pin_category' in item
+        assert 'distance_to_meters' in item
+        
+        assert isinstance(item['pin_name'], str)
+        assert isinstance(item['pin_lat'], str)
+        assert isinstance(item['pin_long'], str)
+        assert isinstance(item['pin_category'], str)
+        assert isinstance(item['distance_to_meters'], float)
