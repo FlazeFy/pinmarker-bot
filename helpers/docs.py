@@ -28,4 +28,6 @@ def generate_dummy(type:str):
         return '049f5af1-7a22-4fea-adc3-dae717a45581'
     elif type == 'pin_name':
         return 'My Kost'
+    elif type == 'dct_type':
+        return 'pin_category'
     

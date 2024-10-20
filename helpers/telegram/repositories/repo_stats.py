@@ -1,10 +1,10 @@
 import requests
 import httpx
 # Query
-async def api_get_dashboard(tele_id: str, role:str):
+async def api_get_dashboard(user_id: str, role:str):
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"http://127.0.0.1:8000/api/v1/stats/dashboard/{tele_id}/{role}")
+            response = await client.get(f"http://127.0.0.1:8000/api/v1/stats/dashboard/{user_id}/{role}")
             response.raise_for_status()
             data = response.json()
 

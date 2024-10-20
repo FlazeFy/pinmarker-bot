@@ -19,6 +19,7 @@ router_pin = APIRouter()
                     "example": {
                         "data": [
                             {
+                                "id": "049f5af1-7a22-4fea-adc3-dae717a45581",
                                 "pin_name": "Warteg D Amertha",
                                 "pin_desc": "Warteg murmer langganan depan gapura D Amertha. Parkir di depan gapura. Minggu tutup",
                                 "pin_coordinate": "-6.977430240726936,107.65112376402404",
@@ -26,7 +27,9 @@ router_pin = APIRouter()
                                 "pin_person": "Bude",
                                 "is_favorite": False,
                                 "pin_address": "D Amertha Residence",
-                                "created_at": "2024-03-18T06:47:27"
+                                "created_at": "2024-03-18T06:47:27",
+                                "total_visit": 6,
+                                "last_visit": "2024-08-19T11:00:00"
                             }
                         ],
                         "message": "Pin found",
