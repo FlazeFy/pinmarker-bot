@@ -2,7 +2,7 @@ from sqlalchemy import create_engine,MetaData
 from firebase_admin import credentials
 
 # MySQL
-db=create_engine('mysql+pymysql://root@localhost:3306/pinmarker', pool_size=10, max_overflow=20, pool_pre_ping=True, pool_recycle=28000)
+db=create_engine('mysql+pymysql://root@localhost:3306/pinmarker', pool_size=20, max_overflow=80, pool_pre_ping=True, pool_recycle=100000)
 meta=MetaData()
 
 # Firebase

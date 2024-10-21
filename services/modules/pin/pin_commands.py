@@ -251,49 +251,50 @@ async def post_pin_query(data:dict):
             is_favorite = data.get('is_favorite')
             created_at = datetime.utcnow()
             created_by = data.get('created_by')
+            id = get_UUID()
 
             errors_validation = []
             pin_name_validate = validate_data(pin_name, 'Pin Name', 'string', max_length=75, min_length=2, is_required=True)
             if pin_name_validate:
-                errors_validation.append(pin_name_validate)
+                errors_validation = errors_validation + pin_name_validate
 
             pin_desc_validate = validate_data(pin_desc, 'Pin Description', 'string', max_length=500, is_required=False)
             if pin_desc_validate:
-                errors_validation.append(pin_desc_validate)
+                 errors_validation = errors_validation + pin_desc_validate
 
             pin_lat_validate = validate_data(pin_lat, 'Pin Latitude', 'string', max_length=144, min_length=3, is_required=True)
             if pin_lat_validate:
-                errors_validation.append(pin_lat_validate)
+                 errors_validation = errors_validation + pin_lat_validate
 
             pin_long_validate = validate_data(pin_long, 'Pin Longitude', 'string', max_length=144, min_length=3, is_required=True)
             if pin_long_validate:
-                errors_validation.append(pin_long_validate)
+                 errors_validation = errors_validation + pin_long_validate
 
             pin_category_validate = validate_data(pin_category, 'Pin Category', 'string', max_length=36, is_required=True)
             if pin_category_validate:
-                errors_validation.append(pin_category_validate)
+                 errors_validation = errors_validation + pin_category_validate
 
             pin_person_validate = validate_data(pin_person, 'Pin Person', 'string', max_length=75, is_required=False)
             if pin_person_validate:
-                errors_validation.append(pin_person_validate)
+                 errors_validation = errors_validation + pin_person_validate
 
             pin_call_validate = validate_data(pin_call, 'Pin Call', 'string', max_length=16, is_required=False)
             if pin_call_validate:
-                errors_validation.append(pin_call_validate)
+                 errors_validation = errors_validation + pin_call_validate
 
             pin_email_validate = validate_data(pin_email, 'Pin Email', 'string', max_length=255, min_length=9, is_required=False)
             if pin_email_validate:
-                errors_validation.append(pin_email_validate)
+                 errors_validation = errors_validation + pin_email_validate
 
             pin_address_validate = validate_data(pin_address, 'Pin Address', 'string', max_length=500, is_required=False)
             if pin_address_validate:
-                errors_validation.append(pin_address_validate)
+                 errors_validation = errors_validation + pin_address_validate
 
             if errors_validation:
                 return JSONResponse(status_code=422, content={"message": "Validation failed", "errors": errors_validation})
 
             query = insert(pin).values(
-                id=get_UUID(),
+                id=id,
                 pin_name=pin_name,
                 pin_desc=pin_desc,
                 pin_lat=pin_lat,
@@ -312,13 +313,23 @@ async def post_pin_query(data:dict):
 
             # Exec
             result = session.execute(query)
-            session.commit()
 
             if result.rowcount > 0:
+                data['id'] = id
+                data['created_at'] = created_at.isoformat()
+
+                is_history_success = await create_history(
+                    type="Add Marker",
+                    ctx=pin_name,
+                    user_id=created_by,
+                    session=session
+                )
+
+                session.commit()
                 return JSONResponse(
                     status_code=201, 
                     content={
-                        "message": "Pin inserted",
+                        "message": "Pin created" if is_history_success else "Pin created but failed to write history",
                         "data": data,
                         "count": result.rowcount
                     }

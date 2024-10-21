@@ -1050,12 +1050,27 @@ async def put_pin_favorite_api(user_id: str = Path(..., example=generate_dummy(t
     description="This request is used to create a new pin",
     tags=["Pin"],
     responses={
-        200: {
+        201: {
             "description": "Successful created pin",
             "content": {
                 "application/json": {
                     "example": {
                         "message": "Pin created",
+                        "data": {
+                            "pin_name": "test 2 via api",
+                            "pin_desc": "Tengah malam dan subuh ada portal. Tunggu depan warkop",
+                            "pin_lat": "-6.237841118966224",
+                            "pin_long": "106.85396032361263",
+                            "pin_category": "Friend",
+                            "pin_person": "Jhon Doe",
+                            "pin_call": "08123456789",
+                            "pin_email": "flazen.edu@gmail.com",
+                            "pin_address": "Gatsu",
+                            "is_favorite": 1,
+                            "created_by": "fcd3f23e-e5aa-11ee-892a-3216422910e9",
+                            "id": "c54ad278-396d-2a1f-03a2-eeb42bcb6d5d",
+                            "created_at": "2024-10-21T03:11:52.257019"
+                        },
                         "count": 1
                     }
                 }
