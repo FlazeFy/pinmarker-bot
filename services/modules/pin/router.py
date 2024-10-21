@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Path
 from services.modules.pin.pin_queries import get_all_pin, get_pin_by_category_query,get_all_pin_export_query,get_global_list_query,get_nearest_pin_query,get_detail_list_by_id_query,get_global_pin_by_list_id,get_pin_detail_history_by_id_or_name,get_pin_distance_to_my_personal_pin_by_id,get_trash_pin,get_nearest_global_pin_query
-from services.modules.pin.pin_commands import soft_delete_pin_by_id,recover_pin_by_id,hard_delete_pin_by_id,put_pin_favorite
+from services.modules.pin.pin_commands import soft_delete_pin_by_id,recover_pin_by_id,hard_delete_pin_by_id,put_pin_favorite,post_pin_query
 from helpers.docs import generate_dummy
 
 router_pin = APIRouter()
@@ -1042,5 +1042,77 @@ async def get_trash_pin_api(user_id: str = Path(..., example=generate_dummy(type
 async def put_pin_favorite_api(user_id: str = Path(..., example=generate_dummy(type='user_id')),id: str = Path(..., example=generate_dummy(type='pin_id'))):
     try:
         return await put_pin_favorite(user_id=user_id,pin_id=id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router_pin.post("/api/v1/pin", response_model=dict, 
+    summary="Create a pin (MySql)",
+    description="This request is used to create a new pin",
+    tags=["Pin"],
+    responses={
+        200: {
+            "description": "Successful created pin",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Pin created",
+                        "count": 1
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Failed to insert to db",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Something error! Please call admin",
+                    }
+                }
+            }
+        },
+        401: {
+            "description": "Unauthorized",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "User account not found",
+                    }
+                }
+            }
+        },
+        422: {
+            "description": "Failed to validate the data",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Validation failed",
+                        "errors": [
+                            [
+                                {
+                                    "field": "Pin Latitude",
+                                    "message": "Pin Latitude cant be empty"
+                                }
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Internal server error",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "[Error message]"
+                    }
+                }
+            }
+        }
+    })
+async def post_pin_api(request : Request):
+    try:
+        data = await request.json()
+        return await post_pin_query(data=data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
