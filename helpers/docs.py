@@ -1,4 +1,3 @@
-
 def generate_dummy(type:str):
     if type == 'socmed_id':
         return '1317625977'

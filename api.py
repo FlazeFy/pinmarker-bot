@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from configs.configs import cred
 import firebase_admin
+
+from services.scheduler.schedule import start_scheduler
 app = FastAPI(
     title="PinMarker API",
     description="This is an Rest API documentation for all PinMarker request that used in PinMarker Mobile, PinMarker Telegram BOT, PinMarker Discord BOT, and PinMarker Web. This Backend environment was built using Fast API and have databases of MySQL, Firebase Realtime, and SQFlite for the database. And was hosted in CPanel.",
@@ -57,5 +59,9 @@ app.include_router(router_dct)
 @app.get("/")
 async def root():
     return {"message": "Welcome to PinMarker"}
+
+@app.on_event("startup")
+def on_startup():
+    start_scheduler()
 
 __all__ = ['app']

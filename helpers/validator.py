@@ -1,5 +1,3 @@
-
-
 def validate_data(data, field_name: str, field_type: str, max_length: int = None, min_length: int = None, is_required: bool = False):
     res = []
 

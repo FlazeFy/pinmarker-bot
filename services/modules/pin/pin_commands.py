@@ -249,7 +249,7 @@ async def post_pin_query(data:dict):
             pin_email = data.get('pin_email')
             pin_address = data.get('pin_address')
             is_favorite = data.get('is_favorite')
-            created_at = datetime.utcnow()
+            created_at = data.get('created_at') or datetime.utcnow()
             created_by = data.get('created_by')
             id = get_UUID()
 
