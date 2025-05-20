@@ -16,6 +16,7 @@ async def audit_show_all_feedback_every_week():
         data = res.json()
 
         if data["count"] == 0 or not data["data"]:
+            # Telegram Bot Chat
             if admins:
                 for idx, dt in enumerate(admins):
                     await send_tele_chat(tele_id=dt.telegram_user_id,msg=f"[ADMIN] Hello {dt.username}, I just checked the feedback, and not found anything")
@@ -50,6 +51,7 @@ async def audit_show_all_feedback_every_week():
                     dt['created_at'],
                 ])
 
+            # Prepare the File
             if output is not None:
                 output.seek(0)
                 res_output = output.getvalue() 
@@ -57,6 +59,7 @@ async def audit_show_all_feedback_every_week():
                 file_bytes.name = f'Feedback_List_Part-{part}.csv'
                 list_file.append(file_bytes)
 
+            # Telegram Bot Chat
             if len(list_file) == 1:
                 if admins:
                     for idx, dt in enumerate(admins):

@@ -137,3 +137,39 @@ async def get_all_visit(userId:str):
                 "count": 0
             }
         )
+    
+async def get_recap_all_weekly_visit():
+    # Query Builder
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+
+    query = select(
+        visit.c.visit_desc,
+        visit.c.visit_with,
+        visit.c.visit_by,
+        visit.c.created_at,
+        pin.c.pin_name,
+        pin.c.pin_category,
+        user.c.username,
+        user.c.telegram_is_valid,
+        user.c.telegram_user_id
+    ).outerjoin(
+        pin, pin.c.id == visit.c.pin_id,
+    ).join(
+        user, user.c.id == visit.c.created_by
+    ).where(
+        pin.c.deleted_at.is_(None),
+        visit.c.created_at >= seven_days_ago
+    ).order_by(
+        user.c.username.asc(),
+        visit.c.created_at.asc()
+    )
+
+    # Exec
+    result = db.connect().execute(query)
+    data = result.fetchall()
+    db.connect().close()
+
+    if len(data) != 0:
+        return data
+    else:
+        return None
