@@ -11,6 +11,7 @@ from services.scheduler.clean.clean_history import clean_expired_history_every_d
 from services.scheduler.clean.clean_validate_request import clean_expired_validate_request_every_day
 # Remind Scheduler
 from services.scheduler.remind.remind_review import remind_to_review_visited_pin_every_day
+from services.scheduler.remind.remind_user import remind_user_inactive_every_week
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
@@ -40,8 +41,16 @@ def start_scheduler():
     )
     scheduler.add_job(
         lambda: asyncio.run(remind_to_review_visited_pin_every_day()),
-        CronTrigger(hour=22, minute=33),
+        CronTrigger(hour=0, minute=35),
         id="remind_to_review_visited_pin_every_day",
+        replace_existing=True
+    )
+
+    # Run every day at 00:40
+    scheduler.add_job(
+        lambda: asyncio.run(remind_user_inactive_every_week()),
+        CronTrigger(day_of_week='tue,fri', hour=0, minute=40),
+        id="remind_user_inactive_every_week",
         replace_existing=True
     )
 

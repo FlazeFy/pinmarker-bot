@@ -9,5 +9,6 @@ user=Table(
     Column('email',String(255)),
     Column('telegram_user_id',String(36)),
     Column('telegram_is_valid',Integer),
-    Column('created_at',DateTime)
+    Column('created_at',DateTime),
+    Column('last_login',DateTime, nullable=True)
 )

@@ -6,6 +6,7 @@ from configs.configs import db
 from sqlalchemy import select, and_, func
 from sqlalchemy.sql.functions import coalesce
 from fastapi.responses import JSONResponse
+from datetime import datetime, timedelta
 
 async def get_check_context_query(type:str, context:str):
     if type == "email":
@@ -195,5 +196,31 @@ async def get_all_user():
                 "count": 0
             }
         )
+    
+async def get_all_inactive_user():
+    # Query builder
+    remind_day = datetime.utcnow() - timedelta(days=30)
+
+    query = select(
+        user.c.username,
+        user.c.email,
+        user.c.telegram_user_id,
+        user.c.telegram_is_valid,
+        user.c.last_login,
+    ).where(
+        user.c.last_login < remind_day
+    ).order_by(
+        user.c.username.asc()
+    )
+
+    # Exec
+    result = db.connect().execute(query)
+    data = result.fetchall()
+    db.connect().close()
+
+    if len(data) != 0:
+        return data
+    else:
+        return None
         
         
