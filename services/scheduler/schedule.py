@@ -6,6 +6,8 @@ import asyncio
 from services.scheduler.audit.audit_feedback import audit_show_all_feedback_every_week
 # Recap Scheduler
 from services.scheduler.recap.recap_visit import recap_summary_visit_history_every_week
+# Clean Scheduler
+from services.scheduler.clean.clean_history import clean_expired_history_every_day
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
@@ -15,6 +17,14 @@ def start_scheduler():
         lambda: asyncio.run(audit_show_all_feedback_every_week()),
         CronTrigger(day_of_week='fri', hour=0, minute=10),
         id="audit_show_all_feedback_every_week",
+        replace_existing=True
+    )
+
+    # Run every day at 00:20
+    scheduler.add_job(
+        lambda: asyncio.run(clean_expired_history_every_day()),
+        CronTrigger(hour=0, minute=20),
+        id="clean_expired_history_every_day",
         replace_existing=True
     )
 

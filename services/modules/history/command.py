@@ -1,9 +1,8 @@
-from configs.configs import db
 from services.modules.history.model import history
-from fastapi.responses import JSONResponse
-from sqlalchemy import insert
+from sqlalchemy import insert, delete
 from helpers.generator import get_UUID
 from datetime import datetime
+from datetime import datetime, timedelta
 
 async def create_history(type: str, ctx: str, user_id: str, session):
     try:
@@ -24,6 +23,27 @@ async def create_history(type: str, ctx: str, user_id: str, session):
             return True
         else:
             return False
+    except Exception as e:
+        session.rollback() 
+        raise
+    finally:
+        session.close() 
+
+async def delete_all_expired_history(session):
+    try:
+        cutoff_date = datetime.utcnow() - timedelta(days=200)
+
+        # Query builder
+        query = delete(history).where(history.c.created_at < cutoff_date)
+
+        # Exec
+        result = session.execute(query)
+        session.commit()
+
+        if result.rowcount > 0:
+            return result.rowcount
+        else:
+            return None
     except Exception as e:
         session.rollback() 
         raise
