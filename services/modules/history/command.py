@@ -31,7 +31,7 @@ async def create_history(type: str, ctx: str, user_id: str, session):
 
 async def delete_all_expired_history(session):
     try:
-        cutoff_date = datetime.utcnow() - timedelta(days=200)
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
 
         # Query builder
         query = delete(history).where(history.c.created_at < cutoff_date)

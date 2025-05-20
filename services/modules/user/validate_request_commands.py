@@ -3,9 +3,8 @@ from services.modules.user.user_model import user
 from helpers.mailer.mail import send_email
 from helpers.generator import get_UUID, get_token_validation
 from configs.configs import db
-from datetime import datetime
-from sqlalchemy import select, and_
-from telegram import Bot
+from datetime import datetime, timedelta
+from sqlalchemy import select, and_, delete
 from helpers.telegram.manual import send_tele_chat
 from fastapi.responses import JSONResponse
 
@@ -157,3 +156,24 @@ async def post_validate_regis_command(token:str, username:str, type:str):
     except Exception as e:
         db.connect().rollback()
         raise
+
+async def delete_all_expired_validate_request(session):
+    try:
+        cutoff_date = datetime.utcnow() - timedelta(days=2)
+
+        # Query builder
+        query = delete(req).where(req.c.created_at < cutoff_date)
+
+        # Exec
+        result = session.execute(query)
+        session.commit()
+
+        if result.rowcount > 0:
+            return result.rowcount
+        else:
+            return None
+    except Exception as e:
+        session.rollback() 
+        raise
+    finally:
+        session.close() 
