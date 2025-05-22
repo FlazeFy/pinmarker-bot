@@ -12,7 +12,7 @@ from services.scheduler.clean.clean_validate_request import clean_expired_valida
 # Remind Scheduler
 from services.scheduler.remind.remind_review import remind_to_review_visited_pin_every_day
 from services.scheduler.remind.remind_user import remind_user_inactive_every_week
-from services.scheduler.remind.remind_global_list import remind_empty_tag_for_global_list_every_week
+from services.scheduler.remind.remind_global_list import remind_empty_tag_for_global_list_every_week, remind_empty_global_list_every_week
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
@@ -54,11 +54,20 @@ def start_scheduler():
         id="remind_user_inactive_every_week",
         replace_existing=True
     )
+
     # Run every mon and thu at 00:40
     scheduler.add_job(
         lambda: asyncio.run(remind_empty_tag_for_global_list_every_week()),
         CronTrigger(day_of_week='mon,thu',  hour=0, minute=40),
         id="remind_empty_tag_for_global_list_every_week",
+        replace_existing=True
+    )
+
+    # Run every mon and thu at 00:50
+    scheduler.add_job(
+        lambda: asyncio.run(remind_empty_global_list_every_week()),
+        CronTrigger(day_of_week='mon,thu',  hour=0, minute=50),
+        id="remind_empty_global_list_every_week",
         replace_existing=True
     )
 
