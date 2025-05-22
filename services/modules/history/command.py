@@ -1,7 +1,6 @@
 from services.modules.history.model import history
 from sqlalchemy import insert, delete
 from helpers.generator import get_UUID
-from datetime import datetime
 from datetime import datetime, timedelta
 
 async def create_history(type: str, ctx: str, user_id: str, session):

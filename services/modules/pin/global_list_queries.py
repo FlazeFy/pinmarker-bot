@@ -2,7 +2,7 @@ from services.modules.pin.global_list_rel_model import global_list_pin_relation
 from services.modules.pin.global_list_model import global_list
 from services.modules.user.user_model import user
 from configs.configs import db
-from sqlalchemy import select, and_
+from sqlalchemy import select
 
 async def get_all_empty_tag_for_global_list():
     # Query builder
@@ -46,6 +46,8 @@ async def get_all_empty_global_list():
         global_list_pin_relation, global_list.c.id == global_list_pin_relation.c.list_id
     ).where(
         global_list_pin_relation.c.list_id.is_(None),
+    ).group_by(
+        global_list.c.id
     ).order_by(
         user.c.username.asc(),
         global_list.c.created_at.desc()

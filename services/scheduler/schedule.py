@@ -9,6 +9,7 @@ from services.scheduler.recap.recap_visit import recap_summary_visit_history_eve
 # Clean Scheduler
 from services.scheduler.clean.clean_history import clean_expired_history_every_day
 from services.scheduler.clean.clean_validate_request import clean_expired_validate_request_every_day
+from services.scheduler.clean.clean_global_list import clean_empty_global_list_every_day
 # Remind Scheduler
 from services.scheduler.remind.remind_review import remind_to_review_visited_pin_every_day
 from services.scheduler.remind.remind_user import remind_user_inactive_every_week
@@ -30,6 +31,12 @@ def start_scheduler():
         lambda: asyncio.run(clean_expired_history_every_day()),
         CronTrigger(hour=0, minute=20),
         id="clean_expired_history_every_day",
+        replace_existing=True
+    )
+    scheduler.add_job(
+        lambda: asyncio.run(clean_empty_global_list_every_day()),
+        CronTrigger(hour=0, minute=25),
+        id="clean_empty_global_list_every_day",
         replace_existing=True
     )
 
