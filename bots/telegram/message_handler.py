@@ -8,15 +8,17 @@ from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.user.user_command import update_sign_out
 # Helpers
-from helpers.telegram.repositories.repo_bot_history import api_get_command_history
-from helpers.telegram.repositories.repo_stats import api_get_dashboard
-from helpers.telegram.repositories.repo_pin import api_get_all_pin_name
-from helpers.telegram.repositories.repo_track import api_get_last_track
-from helpers.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export, api_get_nearset_pin,api_get_all_pin_name
-from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
-from helpers.telegram.repositories.repo_visit import api_get_visit_history
-from helpers.telegram.typography import send_long_message
+from bots.telegram.repositories.repo_bot_history import api_get_command_history
+from bots.telegram.repositories.repo_stats import api_get_dashboard
+from bots.telegram.repositories.repo_pin import api_get_all_pin_name
+from bots.telegram.repositories.repo_track import api_get_last_track
+from bots.telegram.repositories.repo_pin import api_get_all_pin, api_get_all_pin_export, api_get_nearset_pin,api_get_all_pin_name
+from bots.telegram.repositories.repo_user import api_get_profile_by_telegram_id
+from bots.telegram.repositories.repo_visit import api_get_visit_history
+from bots.telegram.typography import send_long_message
+
 from helpers.sqlite.template import post_ai_command
+from configs.menu_list import MENU_LIST_USER
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text('Type your username : ')
@@ -31,7 +33,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         role = profile['role']
         await query.answer()
 
-        if query.data == '1':
+        if query.data == '/show_my_pin':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Show my pin')
             res, type, is_success = await api_get_all_pin(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -45,7 +47,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')      
 
-        elif query.data == '1/near':
+        elif query.data == '/nearest_pin':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Nearest Pin')
             res, is_success = await api_get_nearset_pin(userId=userId, max_dis=1000)
             message_chunks = send_long_message(res)
@@ -58,7 +60,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
-        elif query.data == '1/export':
+        elif query.data == '/export_pins':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Export pin')
             res, is_success = await api_get_all_pin_export(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -74,15 +76,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"<i>- {res} -</i>", reply_markup= main_menu_keyboard(), parse_mode='HTML')         
         
-        elif query.data == '2':
+        elif query.data == '/pin_details':
             res = await api_get_all_pin_name(userId=userId)
             message_chunks = send_long_message(res)
             for chunk in message_chunks:
                 await context.bot.send_message(chat_id=query.message.chat_id, text=chunk, parse_mode='HTML')
 
-        elif query.data == '3' or query.data == '3/all':
+        elif query.data == '/visit_last_30d' or query.data == '/all_visit_history':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/History visit last 30 days')
-            res, type = await api_get_visit_history(user_id=userId, days='30' if query.data == '3' else 'all')
+            res, type = await api_get_visit_history(user_id=userId, days='30' if query.data == '/visit_last_30d' else 'all')
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             if type == 'file':
@@ -100,7 +102,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')   
 
-        elif query.data == '4':
+        elif query.data == '/dashboard':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Dashboard')
             res, is_success = await api_get_dashboard(tele_id=userId, role=role)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -110,7 +112,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
-        elif query.data == '5':
+        elif query.data == '/stats':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Stats')
             res = await get_stats(userId=userId)
             res_capture = await get_stats_capture()
@@ -122,7 +124,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text=f"Showing stats...\n\n{res}", reply_markup=reply_markup, parse_mode='HTML')
 
-        elif query.data == '7':
+        elif query.data == '/live_tracker':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Last Live Tracker Position')
             track_lat, track_long, msg, is_success = await api_get_last_track(user_id=userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
@@ -134,7 +136,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
-        elif query.data == '9':
+        elif query.data == '/bot_history':
             res, type, _ = await api_get_command_history(tele_id=userTeleId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -145,12 +147,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
-        elif query.data == '11':
+        elif query.data == '/about_us':
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text=f"PinMarker is an apps that store data about marked location on your maps. You can save location and separate it based on category or list. You can collaborate and share your saved location with all people. We also provide stats so you can monitoring your saved location.\n\nWe available on\nWeb : https://pinmarker.leonardhors.com/\n Telegram BOT : @Pinmarker_bot\nDiscord BOT : \nMobile Apps : \n\nParts of FlazenApps", reply_markup=reply_markup)
             
-        elif query.data == '0':
+        elif query.data == '/exit_bot':
             keyboard = [
                 [InlineKeyboardButton("Yes", callback_data='sign_out_yes')],
                 [InlineKeyboardButton("No", callback_data='sign_out_no')]
@@ -186,19 +188,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main_menu_keyboard():
     keyboard = [
-        [InlineKeyboardButton("Show my pin", callback_data='1')],
-        [InlineKeyboardButton("Show nearest pin", callback_data='1/near')],
-        [InlineKeyboardButton("Export pin", callback_data='1/export')],
-        [InlineKeyboardButton("Show detail pin", callback_data='2')],
-        [InlineKeyboardButton("History visit last 30 days", callback_data='3')],
-        [InlineKeyboardButton("All history visit", callback_data='3/all')],
-        [InlineKeyboardButton("Dashboard", callback_data='4')],
-        [InlineKeyboardButton("Stats", callback_data='5')],
-        [InlineKeyboardButton("Last Live Tracker Position", callback_data='7')],
-        [InlineKeyboardButton("- Send Feedback -", callback_data='8')],
-        [InlineKeyboardButton("- BOT History -", callback_data='9')],
-        [InlineKeyboardButton("- Help Center -", callback_data='10')],
-        [InlineKeyboardButton("- About Us -", callback_data='11')],
-        [InlineKeyboardButton("Exit Bot", callback_data='0')]
+        [InlineKeyboardButton(item["label"], callback_data=item["data"])]
+        for item in MENU_LIST_USER
     ]
     return InlineKeyboardMarkup(keyboard)

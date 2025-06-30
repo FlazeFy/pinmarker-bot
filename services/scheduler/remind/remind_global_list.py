@@ -1,4 +1,4 @@
-from helpers.telegram.manual import send_tele_chat
+from bots.telegram.manual import send_tele_chat
 from services.modules.user.admin_queries import get_all_admin_contact
 from services.modules.pin.global_list_queries import get_all_empty_tag_for_global_list, get_all_empty_global_list
 

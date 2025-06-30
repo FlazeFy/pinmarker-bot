@@ -10,7 +10,7 @@ from services.modules.visit.router import router_visit
 from services.modules.dictionary.router import router_dct
 from services.modules.callback.line import router_callback_line
 from fastapi.middleware.cors import CORSMiddleware
-from helpers.line import message_handler
+from bots.line import message_handler, location_handler
 
 from configs.configs import cred
 import firebase_admin

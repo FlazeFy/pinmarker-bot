@@ -16,8 +16,8 @@ intents.message_content = True
 bot = discord.Client(intents=intents)
 
 # Helpers
-from helpers.discord.message_handler import on_message_handler
-from helpers.discord.ready_handler import on_ready_handler
+from bots.discord.message_handler import on_message_handler
+from bots.discord.ready_handler import on_ready_handler
 
 with open('configs/discord.json', 'r') as config_file:
     config = json.load(config_file)

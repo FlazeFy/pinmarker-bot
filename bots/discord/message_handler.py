@@ -6,15 +6,15 @@ nltk.download('punkt')
 from discord import File
 
 # Repo Usecase
-from helpers.discord.repositories.repo_pin import api_get_all_pin_export, api_get_all_pin
-from helpers.discord.repositories.repo_feedback import api_get_all_feedback
-from helpers.discord.repositories.repo_user import api_get_all_user
-from helpers.discord.repositories.repo_global import api_get_global_list
-from helpers.discord.repositories.repo_stats import api_get_summary
-from helpers.discord.repositories.repo_stats import api_capture_stats
+from bots.discord.repositories.repo_pin import api_get_all_pin_export, api_get_all_pin
+from bots.discord.repositories.repo_feedback import api_get_all_feedback
+from bots.discord.repositories.repo_user import api_get_all_user
+from bots.discord.repositories.repo_global import api_get_global_list
+from bots.discord.repositories.repo_stats import api_get_summary
+from bots.discord.repositories.repo_stats import api_capture_stats
 
 # Helper
-from helpers.discord.typography import send_long_message, filter_out
+from bots.discord.typography import send_long_message, filter_out
 
 async def on_message_handler(bot, message):
     user_message = message.content.lower()

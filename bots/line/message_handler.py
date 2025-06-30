@@ -1,5 +1,4 @@
-from linebot.models import MessageEvent, TextMessage
-from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate
+from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage
 from configs.menu_list import MENU_LIST_USER
 from services.modules.callback.line import line_bot_api, handler 
 

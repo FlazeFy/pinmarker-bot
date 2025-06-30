@@ -10,9 +10,9 @@ firebase_admin.initialize_app(cred, {
 })
 
 # Helpers
-from helpers.telegram.message_handler import start_command, button
-from helpers.telegram.location_handler import location_command
-from helpers.telegram.ai_handler import handle_ai
+from bots.telegram.message_handler import start_command, button
+from bots.telegram.location_handler import location_command
+from bots.telegram.ai_handler import handle_ai
 
 with open('configs/telegram_stage.json', 'r') as config_file:
     config = json.load(config_file)

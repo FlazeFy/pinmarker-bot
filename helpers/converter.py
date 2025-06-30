@@ -1,4 +1,5 @@
 import math
+import re
 
 def to_radians(degree):
     return degree * math.pi / 180
@@ -33,3 +34,7 @@ def calculate_distance(coord1:str, coord2:str):
         return distance
     else: 
         return "Invalid coordinate. Cannot be empty"
+
+def strip_html_tags(text):
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', text)

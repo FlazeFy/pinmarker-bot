@@ -2,7 +2,7 @@ import csv
 import io
 import httpx
 
-from helpers.telegram.manual import send_tele_chat
+from bots.telegram.manual import send_tele_chat
 from services.modules.user.admin_queries import get_all_admin_contact
 
 async def audit_show_all_feedback_every_week():

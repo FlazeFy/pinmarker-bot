@@ -5,7 +5,7 @@ from helpers.generator import get_UUID, get_token_validation
 from configs.configs import db
 from datetime import datetime, timedelta
 from sqlalchemy import select, and_, delete
-from helpers.telegram.manual import send_tele_chat
+from bots.telegram.manual import send_tele_chat
 from fastapi.responses import JSONResponse
 
 async def post_req_register_command(email:str, username:str, type:str):

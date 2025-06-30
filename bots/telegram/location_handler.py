@@ -9,9 +9,11 @@ from datetime import datetime
 from helpers.sqlite.template import post_user_timezone
 
 # Services
-from helpers.telegram.repositories.repo_pin import api_get_nearset_pin_share_loc
-from helpers.telegram.repositories.repo_user import api_get_profile_by_telegram_id
-from helpers.telegram.typography import send_long_message
+from bots.telegram.repositories.repo_user import api_get_profile_by_telegram_id
+from bots.telegram.typography import send_long_message
+
+# Repo
+from bots.repositories.repo_pin import api_get_nearset_pin_share_loc
 
 async def location_command(update: Update, context: CallbackContext) -> None:
     user_location = update.message.location
