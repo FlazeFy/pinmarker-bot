@@ -15,6 +15,8 @@ from services.modules.callback.line import line_bot_api, handler
 # Repo
 from bots.repositories.repo_pin import api_get_nearset_pin_share_loc
 
+userId = "474f7c95-9387-91ad-1886-c97239b24992"
+
 @handler.add(MessageEvent, message=LocationMessage)
 def handle_location(event):
     source_type = event.source.type
@@ -41,7 +43,7 @@ def handle_location(event):
         try:
             res = loop.run_until_complete(
                 api_get_nearset_pin_share_loc(
-                    userId="474f7c95-9387-91ad-1886-c97239b24992",
+                    userId=userId,
                     max_dis=10000,
                     lat=latitude,
                     long=longitude

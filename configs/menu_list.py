@@ -14,3 +14,4 @@ MENU_LIST_USER = [
     {"label": "About Us", "data": "/about_us"},
     {"label": "Exit Bot", "data": "/exit_bot"}
 ]
+ABOUT_US = f"PinMarker is an apps that store data about marked location on your maps. You can save location and separate it based on category or list. You can collaborate and share your saved location with all people. We also provide stats so you can monitoring your saved location.\n\nWe available on\nWeb : https://pinmarker.leonardhors.com/\n Telegram BOT : @Pinmarker_bot\nDiscord BOT : PinMarker#3505\nLine BOT : https://line.me/R/ti/p/@349lgagt\nMobile Apps : \n\nParts of FlazenApps"

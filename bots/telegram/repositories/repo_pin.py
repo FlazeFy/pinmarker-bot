@@ -1,85 +1,8 @@
 import requests
 import csv
 import io 
-from firebase_admin import storage
-from datetime import datetime
 import httpx
-# Query
-async def api_get_all_pin(user_id: str):
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"http://127.0.0.1:8000/api/v1/pin/{user_id}")
-            response.raise_for_status()
-            data = response.json()
-
-            if data['count'] > 0:
-                if data['count'] > 30:
-                    output = io.StringIO()
-                    writer = csv.writer(output)
-
-                    # Header
-                    writer.writerow([
-                        "Name", 
-                        "Description",
-                        "Coordinate",
-                        "Address",
-                        "Category",
-                        "Person in Touch",
-                        "Total Visit",
-                        "Last Visit",
-                        "Created At"
-                    ])
-
-                    for dt in data['data']:
-                        writer.writerow([
-                            dt['pin_name'], 
-                            dt['pin_desc'] or '-',
-                            dt['pin_coordinate'],
-                            dt['pin_address'] or '-',
-                            dt['pin_category'],
-                            dt['pin_person'] or '-',
-                            dt['total_visit'],
-                            dt['last_visit'] or '-',
-                            dt['created_at']
-                        ])
-
-                    output.seek(0)
-                    res = output.getvalue()    
-
-                    # Firebase Storage
-                    bucket = storage.bucket()
-                    now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    fileName = f"pin_list_{user_id}_{now_str}.csv"
-                    blob = bucket.blob(f"generated_data/pin/{fileName}")
-                    blob.upload_from_string(res, content_type="text/csv")
-
-                    file_bytes = io.BytesIO(res.encode('utf-8'))
-                    file_bytes.name = 'Pin_List.csv'
-
-                    return file_bytes, 'file', True
-                else:
-                    res = ''
-                    for item in data['data']:
-                        res += (
-                            f"<b>{item['pin_name']}</b> - {item['pin_category']}\n"
-                            f"{item['pin_desc']or '-'}\n"
-                            f"https://www.google.com/maps/place/{item['pin_coordinate']}\n\n"
-                            f"Person in Touch : {item['pin_person'] or '-'}\n"
-                            f"Address : {item['pin_address'] or '-'}\n"
-                            f"Total / Last Visit : {item['total_visit']} / {item['last_visit']or '-'}\n"
-                            f"Created At : {item['created_at'] or '-'}\n\n"
-                            f"========== || ========== || ==========\n\n"
-                        )
-                    return res, 'text', True
-            else:
-                return "No pin found", "text", False
-    except requests.exceptions.RequestException as e:
-        err_msg = f"Something went wrong: {e}"
-        return err_msg, "text", False
-    except KeyError:
-        err_msg = "Error processing the response"
-        return err_msg, "text", False
-    
+# Query    
 async def api_get_all_pin_name(userId: str):
     try:
         async with httpx.AsyncClient() as client:
