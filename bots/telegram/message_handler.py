@@ -7,16 +7,16 @@ from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.user.user_command import update_sign_out
 # Helpers
-from bots.telegram.repositories.repo_bot_history import api_get_command_history
 from bots.telegram.repositories.repo_stats import api_get_dashboard
 from bots.telegram.repositories.repo_pin import api_get_all_pin_name
-from bots.telegram.repositories.repo_track import api_get_last_track
 from bots.telegram.repositories.repo_pin import api_get_all_pin_export, api_get_nearset_pin,api_get_all_pin_name
 from bots.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from bots.telegram.repositories.repo_visit import api_get_visit_history
 from bots.telegram.typography import send_long_message
 # Repo
 from bots.repositories.repo_pin import api_get_all_pin
+from bots.repositories.repo_track import api_get_last_track
+from bots.repositories.repo_bot_history import api_get_command_history
 
 from helpers.sqlite.template import post_ai_command
 from configs.menu_list import MENU_LIST_USER,ABOUT_US
@@ -138,7 +138,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await query.edit_message_text(text=f"Error processing the response", reply_markup=reply_markup, parse_mode='HTML')
 
         elif query.data == '/bot_history':
-            res, type, _ = await api_get_command_history(tele_id=userTeleId)
+            res, type, _, _ = await api_get_command_history(userTeleId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             if type == 'file':

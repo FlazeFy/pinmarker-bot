@@ -50,7 +50,7 @@ router_bot_history = APIRouter()
             }
         }
     })
-async def get_bot_history_api(socmed_id: str = Path(..., example=generate_dummy(type='socmed_id'), max_length=18, min_length=10)):
+async def get_bot_history_api(socmed_id: str = Path(..., example=generate_dummy(type='socmed_id'), max_length=75, min_length=10)):
     try:
         return await get_bot_history(socmed_id=socmed_id)
     except Exception as e:

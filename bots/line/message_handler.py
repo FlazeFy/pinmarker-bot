@@ -1,6 +1,6 @@
 import asyncio
 import threading
-from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage,TextSendMessage
+from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage,TextSendMessage,LocationSendMessage
 from bots.telegram.typography import send_long_message
 from configs.menu_list import MENU_LIST_USER, ABOUT_US
 from services.modules.callback.line import line_bot_api, handler 
@@ -10,6 +10,8 @@ from helpers.converter import strip_html_tags
 from helpers.sqlite.template import post_ai_command
 # Repo
 from bots.repositories.repo_pin import api_get_all_pin
+from bots.repositories.repo_bot_history import api_get_command_history
+from bots.repositories.repo_track import api_get_last_track
 
 userId = "474f7c95-9387-91ad-1886-c97239b24992"
 
@@ -56,12 +58,12 @@ def handle_command(event):
             try:
                 res, res_type, is_success, uploaded_link = loop.run_until_complete(api_get_all_pin(user_id=userId))
                 
-                if res_type == 'file':
+                if res_type == 'file' and is_success:
                     line_bot_api.push_message(
                         senderId,
                         TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
                     )
-                elif res_type == 'text':
+                elif res_type == 'text' and is_success:
                     message_chunks = send_long_message(f"Showing Location Data:\n\n{strip_html_tags(res)}")
                     for chunk in message_chunks:
                         line_bot_api.push_message(
@@ -77,11 +79,75 @@ def handle_command(event):
                 loop.close()
 
         threading.Thread(target=run_async).start()
+
     elif message_text == "/about_us":
         line_bot_api.push_message(
             senderId,
             TextSendMessage(text=ABOUT_US)
         )
+
+    elif message_text == "/live_tracker":
+        post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
+        def run_async():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                track_lat, track_long, msg, is_success = loop.run_until_complete(api_get_last_track(userId))
+                
+                if is_success:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=f"Showing last tracking...\n{msg}")
+                    )
+
+                    if track_lat is not None and track_long is not None:
+                        line_bot_api.push_message(
+                            senderId,  
+                            LocationSendMessage(
+                                title='Live Tracker Position',
+                                address=f'{track_lat}, {track_long}',
+                                latitude=track_lat,
+                                longitude=track_long
+                            )
+                        )
+                else:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text="Error processing the response")
+                    )
+            finally:
+                loop.close()
+
+        threading.Thread(target=run_async).start()
+
+    elif message_text == "/bot_history":
+        def run_async():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                res, res_type, is_success, uploaded_link = loop.run_until_complete(api_get_command_history(senderId))
+                
+                if res_type == 'file' and is_success:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
+                    )
+                elif res_type == 'text' and is_success:
+                    message_chunks = send_long_message(f"Showing bot history...\n\n{strip_html_tags(res)}")
+                    for chunk in message_chunks:
+                        line_bot_api.push_message(
+                            senderId,
+                            TextSendMessage(text=chunk)
+                        )
+                else:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text="Error processing the response")
+                    )
+            finally:
+                loop.close()
+
+        threading.Thread(target=run_async).start()
 
 def handle_menu(event):
     button_chunks = chunk_buttons(MENU_LIST_USER)
