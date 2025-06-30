@@ -13,9 +13,10 @@ from helpers.generator import get_city_from_coordinate
 from helpers.sqlite.template import post_ai_command
 from bots.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from bots.telegram.repositories.repo_stats import api_get_dashboard
-from bots.telegram.repositories.repo_visit import api_get_visit_history
-from bots.telegram.repositories.repo_pin import api_get_pin_detail_by_name, api_get_all_pin_name
-
+from bots.telegram.repositories.repo_pin import api_get_pin_detail_by_name 
+# Repo
+from bots.repositories.repo_visit import api_get_visit_history
+from bots.repositories.repo_pin import api_get_all_pin_name
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query, get_pin_by_name
 from services.modules.stats.stats_queries import get_stats, get_dashboard

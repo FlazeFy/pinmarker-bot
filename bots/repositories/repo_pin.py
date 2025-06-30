@@ -138,10 +138,33 @@ async def api_get_all_pin(user_id: str):
                         )
                     return res, 'text', True, None
             else:
-                return "No pin found", "text", False
+                return "No pin found", "text", False, None
     except requests.exceptions.RequestException as e:
         err_msg = f"Something went wrong: {e}"
-        return err_msg, "text", False
+        return err_msg, "text", False, None
     except KeyError:
         err_msg = "Error processing the response"
-        return err_msg, "text", False
+        return err_msg, "text", False, None
+       
+async def api_get_all_pin_name(userId: str):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"http://127.0.0.1:8000/api/v1/pin/{userId}")
+            response.raise_for_status()
+            data = response.json()
+
+            if data['data']:
+                res = f"Showing all pin. Type detail/*Pin Name* to see the detail\nfor example type <b>detail {data['data'][0]['pin_name']}</b>\n\n"
+                for idx, dt in enumerate(data['data']):
+                    res += (
+                        f"{idx+1}. {dt['pin_name']}\n"
+                    )
+                return res
+            else:
+                return "No pin found"
+    except requests.exceptions.RequestException as e:
+        err_msg = f"Something went wrong: {e}"
+        return err_msg
+    except KeyError:
+        err_msg = "Error processing the response"
+        return err_msg

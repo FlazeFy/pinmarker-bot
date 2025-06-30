@@ -9,9 +9,10 @@ from services.modules.callback.line import line_bot_api, handler
 from helpers.converter import strip_html_tags
 from helpers.sqlite.template import post_ai_command
 # Repo
-from bots.repositories.repo_pin import api_get_all_pin
+from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name
 from bots.repositories.repo_bot_history import api_get_command_history
 from bots.repositories.repo_track import api_get_last_track
+from bots.repositories.repo_visit import api_get_visit_history
 
 userId = "474f7c95-9387-91ad-1886-c97239b24992"
 
@@ -85,6 +86,59 @@ def handle_command(event):
             senderId,
             TextSendMessage(text=ABOUT_US)
         )
+
+    elif message_text == "/pin_details":
+        def run_async():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                res = loop.run_until_complete(api_get_all_pin_name(userId))
+                
+                message_chunks = send_long_message(strip_html_tags(res))
+                for chunk in message_chunks:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=chunk)
+                    )
+            finally:
+                loop.close()
+
+        threading.Thread(target=run_async).start()
+
+    elif message_text == "/visit_last_30d" or message_text == "/all_visit_history":
+        post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
+
+        def run_async():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                res, type, uploaded_link = loop.run_until_complete(api_get_visit_history(userId, '30' if message_text == '/visit_last_30d' else 'all'))
+                
+                if type == 'file':
+                    uploaded_link_str = ''
+                    for idx, dt in enumerate(uploaded_link, start=1):
+                        uploaded_link_str += f'Part-{idx}\n{dt}\n\n'
+
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
+                    )
+                elif type == 'text':
+                    message_chunks = send_long_message(strip_html_tags(res))
+                    for chunk in message_chunks:
+                        line_bot_api.push_message(
+                            senderId,
+                            TextSendMessage(text=chunk)
+                        )
+                else:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text="Error processing the response")
+                    )
+            finally:
+                loop.close()
+
+        threading.Thread(target=run_async).start()
 
     elif message_text == "/live_tracker":
         post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
