@@ -2,7 +2,6 @@ import json
 from typing import Final
 from telegram import Bot
 from telegram.constants import ParseMode
-import os
 
 with open('configs/telegram.json', 'r') as config_file:
     config = json.load(config_file)
