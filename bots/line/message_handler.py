@@ -4,7 +4,7 @@ from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, C
 
 from bots.telegram.typography import send_long_message
 # Config
-from configs.menu_list import MENU_LIST_USER, ABOUT_US, MENU_LIST_UNKNOWN_GROUP, GREETING_MSG, GREETING_UNKNOWN_USER_MSG
+from configs.menu_list import MENU_LIST_USER, ABOUT_US, MENU_LIST_UNKNOWN_GROUP, GREETING_MSG, GREETING_UNKNOWN_USER_MSG, ASK_NAME_REGISTER_MSG
 # Services
 from services.modules.callback.line import line_bot_api, handler 
 # Helper
@@ -17,9 +17,10 @@ from bots.repositories.repo_bot_history import api_get_command_history
 from bots.repositories.repo_track import api_get_last_track
 from bots.repositories.repo_visit import api_get_visit_history
 from bots.repositories.repo_stats import api_get_dashboard
-from bots.repositories.repo_bot_relation import api_post_check_bot_relation
+from bots.repositories.repo_bot_relation import api_post_check_bot_relation, api_post_create_bot_relation
 
 userId = "474f7c95-9387-91ad-1886-c97239b24992"
+group_register_state = {}
 
 def chunk_buttons(buttons, chunk_size=3):
     chunks = [buttons[i:i + chunk_size] for i in range(0, len(buttons), chunk_size)]
@@ -31,27 +32,53 @@ def chunk_buttons(buttons, chunk_size=3):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     source_type = event.source.type
-    message_text = event.message.text.lower()
+    message_text = event.message.text.strip()
     senderId = get_sender_id(event)
 
     def run_async():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
+            # Check if this chat is waiting for a group name
+            if group_register_state.get(senderId) == 'awaiting_group_name':
+                groupName = message_text
+
+                # Validator
+                if len(groupName) > 75:
+                    line_bot_api.push_message(senderId, TextSendMessage(text="Group name must be under 75 characters 😢"))
+                    return
+
+                # Repo : Create Bot Relation
+                loop.run_until_complete(api_post_create_bot_relation(senderId,groupName,source_type))
+
+                line_bot_api.push_message(senderId, TextSendMessage(text=f"Yay! you're now registered 🎉. Welcome to PinMarker, {groupName}"))
+                del group_register_state[senderId]
+                return
+
+            # Repo : Check Bot Relation
             is_registered, err = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+
             keyword_triggered = (
-                ('/pinmarker' in message_text or 'pinmarker' in message_text) if source_type in ['group', 'room'] else '/start' in message_text
+                ('/pinmarker' in message_text.lower() or 'pinmarker' in message_text.lower())
+                if source_type in ['group', 'room']
+                else '/start' in message_text.lower()
             )
 
+            # Define Menu
             if is_registered:
                 if keyword_triggered:
                     handle_menu_registered(event, source_type)
                 else:
                     handle_command(event)
             else:
-                handle_menu_unregistered(event, source_type)
+                if message_text == "/register_group" and source_type in ['group', 'room']:
+                    group_register_state[senderId] = 'awaiting_group_name'
+                    line_bot_api.push_message(senderId, TextSendMessage(text=ASK_NAME_REGISTER_MSG))
+                else:
+                    handle_menu_unregistered(event, source_type)
+
         except Exception as e:
-            line_bot_api.push_message(senderId, TextSendMessage(text=e))
+            line_bot_api.push_message(senderId, TextSendMessage(text=str(e)))
         finally:
             loop.close()
 
