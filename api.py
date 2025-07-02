@@ -8,6 +8,7 @@ from services.modules.feedback.router import router_feedback
 from services.modules.history.router import router_history
 from services.modules.visit.router import router_visit
 from services.modules.dictionary.router import router_dct
+from services.modules.bot_relation.router import router_bot_relation
 from services.modules.callback.line import router_callback_line
 from fastapi.middleware.cors import CORSMiddleware
 from bots.line import message_handler, location_handler
@@ -58,6 +59,7 @@ app.include_router(router_history)
 app.include_router(router_visit)
 app.include_router(router_dct)
 app.include_router(router_callback_line)
+app.include_router(router_bot_relation) 
 
 @app.get("/")
 async def root():

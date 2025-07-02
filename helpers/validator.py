@@ -47,4 +47,5 @@ def validate_data(data, field_name: str, field_type: str, max_length: int = None
     else:
         return res
 
-    
+def contains_item(text: str, items: list[str]) -> bool:
+    return any(item in text for item in items)
