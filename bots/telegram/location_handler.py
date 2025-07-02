@@ -9,7 +9,7 @@ from datetime import datetime
 from helpers.sqlite.template import post_user_timezone
 
 # Services
-from bots.telegram.repositories.repo_user import api_get_profile_by_telegram_id
+from bots.repositories.repo_user import api_get_profile_by_telegram_id
 from bots.telegram.typography import send_long_message
 
 # Repo

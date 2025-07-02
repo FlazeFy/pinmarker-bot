@@ -1,13 +1,16 @@
 import asyncio
 import threading
 from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage,TextSendMessage,LocationSendMessage
-from bots.telegram.typography import send_long_message
-from configs.menu_list import MENU_LIST_USER, ABOUT_US
-from services.modules.callback.line import line_bot_api, handler 
 
+from bots.telegram.typography import send_long_message
+# Config
+from configs.menu_list import MENU_LIST_USER, ABOUT_US, MENU_LIST_UNKNOWN_GROUP, GREETING_MSG, GREETING_UNKNOWN_USER_MSG
+# Services
+from services.modules.callback.line import line_bot_api, handler 
 # Helper
 from helpers.converter import strip_html_tags
 from helpers.sqlite.template import post_ai_command
+from bots.line.helper import get_sender_id
 # Repo
 from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name, api_get_all_pin_export
 from bots.repositories.repo_bot_history import api_get_command_history
@@ -29,15 +32,18 @@ def handle_message(event):
     source_type = event.source.type
     message = event.message
     message_text = message.text.lower()
+    senderId = get_sender_id(event)
 
     if source_type == "group" or source_type == "room":
         if '/pinmarker' in message_text or 'pinmarker' in message_text:
-            handle_menu(event)
+            # line_bot_api.push_message(senderId, TextSendMessage(text=f"This {source_type.title()} ID : {senderId}"))
+            handle_menu_unregistered(event,source_type)
         else:
             handle_command(event)
     elif source_type == "user":
         if '/start' in message_text:
-            handle_menu(event)
+            # line_bot_api.push_message(senderId, TextSendMessage(text=f"Your User ID : {senderId}"))
+            handle_menu_registered(event,source_type)
         else:
             handle_command(event)
         
@@ -45,11 +51,7 @@ def handle_command(event):
     message = event.message
     source_type = event.source.type
     message_text = message.text.lower()
-
-    if source_type == "group":
-        senderId = event.source.group_id
-    elif source_type == "user":
-        senderId = event.source.user_id
+    senderId = get_sender_id(event)
 
     if not any(x in message_text for x in ["/about_us", "/pin_details", "/bot_history"]):
         post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
@@ -250,7 +252,7 @@ def handle_command(event):
 
         threading.Thread(target=run_async).start()
 
-def handle_menu(event):
+def handle_menu_registered(event,source_type):
     button_chunks = chunk_buttons(MENU_LIST_USER)
 
     columns = []
@@ -279,3 +281,30 @@ def handle_menu(event):
             template=CarouselTemplate(columns=columns)
         )
     )
+
+def handle_menu_unregistered(event,source_type):
+    senderId = get_sender_id(event)
+
+    line_bot_api.push_message(senderId, TextSendMessage(text=GREETING_MSG))
+    line_bot_api.push_message(senderId, TextSendMessage(text=GREETING_UNKNOWN_USER_MSG))
+
+    if source_type == "group":
+        button_chunks = chunk_buttons(MENU_LIST_UNKNOWN_GROUP)
+
+    columns = []
+    for _, chunk in enumerate(button_chunks):
+        actions = [MessageAction(label=btn["label"], text=btn["data"]) for btn in chunk]
+        columns.append(CarouselColumn(
+            title="PinMarker Bot",
+            text="Choose an option :",
+            actions=actions
+        ))
+
+    line_bot_api.reply_message(
+        event.reply_token,
+        TemplateSendMessage(
+            alt_text="Choose an option :",
+            template=CarouselTemplate(columns=columns)
+        )
+    )
+

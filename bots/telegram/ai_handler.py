@@ -7,16 +7,17 @@ import os
 import re
 import random
 
+# Config
+from configs.menu_list import GREETING_MSG
 # Helper
 from bots.telegram.typography import send_long_message
 from helpers.generator import get_city_from_coordinate
 from helpers.sqlite.template import post_ai_command
-from bots.telegram.repositories.repo_user import api_get_profile_by_telegram_id
+from bots.repositories.repo_user import api_get_profile_by_telegram_id
 from bots.repositories.repo_stats import api_get_dashboard
-from bots.telegram.repositories.repo_pin import api_get_pin_detail_by_name 
 # Repo
 from bots.repositories.repo_visit import api_get_visit_history
-from bots.repositories.repo_pin import api_get_all_pin_name
+from bots.repositories.repo_pin import api_get_all_pin_name, api_get_pin_detail_by_name 
 # Services
 from services.modules.pin.pin_queries import get_all_pin, get_find_all, get_pin_by_category_query, get_pin_by_name
 from services.modules.stats.stats_queries import get_stats, get_dashboard
@@ -59,7 +60,7 @@ async def handle_ai(update: Update, context: CallbackContext):
         res = "Hi there! How can I assist you today?"
         await update.message.reply_text(res)
     elif any(dt in tokens for dt in whos):
-        res = "Hello I'm PinMarker Bot"
+        res = GREETING_MSG
         await update.message.reply_text(res)
     elif any(dt in tokens for dt in thanks):
         res = ['Your welcome','At my pleasure']
