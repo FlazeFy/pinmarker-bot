@@ -17,6 +17,7 @@ from bots.repositories.repo_bot_history import api_get_command_history
 from bots.repositories.repo_track import api_get_last_track
 from bots.repositories.repo_visit import api_get_visit_history
 from bots.repositories.repo_stats import api_get_dashboard
+from bots.repositories.repo_bot_relation import api_post_check_bot_relation
 
 userId = "474f7c95-9387-91ad-1886-c97239b24992"
 
@@ -30,26 +31,34 @@ def chunk_buttons(buttons, chunk_size=3):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     source_type = event.source.type
-    message = event.message
-    message_text = message.text.lower()
+    message_text = event.message.text.lower()
     senderId = get_sender_id(event)
 
-    if source_type == "group" or source_type == "room":
-        if '/pinmarker' in message_text or 'pinmarker' in message_text:
-            # line_bot_api.push_message(senderId, TextSendMessage(text=f"This {source_type.title()} ID : {senderId}"))
-            handle_menu_unregistered(event,source_type)
-        else:
-            handle_command(event)
-    elif source_type == "user":
-        if '/start' in message_text:
-            # line_bot_api.push_message(senderId, TextSendMessage(text=f"Your User ID : {senderId}"))
-            handle_menu_registered(event,source_type)
-        else:
-            handle_command(event)
+    def run_async():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            is_registered, err = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+            keyword_triggered = (
+                ('/pinmarker' in message_text or 'pinmarker' in message_text) if source_type in ['group', 'room'] else '/start' in message_text
+            )
+
+            if is_registered:
+                if keyword_triggered:
+                    handle_menu_registered(event, source_type)
+                else:
+                    handle_command(event)
+            else:
+                handle_menu_unregistered(event, source_type)
+        except Exception as e:
+            line_bot_api.push_message(senderId, TextSendMessage(text=e))
+        finally:
+            loop.close()
+
+    threading.Thread(target=run_async).start()
         
 def handle_command(event):
     message = event.message
-    source_type = event.source.type
     message_text = message.text.lower()
     senderId = get_sender_id(event)
 
