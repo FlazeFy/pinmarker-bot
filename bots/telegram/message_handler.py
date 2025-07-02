@@ -8,8 +8,6 @@ from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.user.user_command import update_sign_out
 # Helpers
 from bots.repositories.repo_stats import api_get_dashboard
-from bots.telegram.repositories.repo_pin import api_get_all_pin_name
-from bots.telegram.repositories.repo_pin import api_get_all_pin_name
 from bots.repositories.repo_user import api_get_profile_by_telegram_id
 from bots.repositories.repo_visit import api_get_visit_history
 from bots.telegram.typography import send_long_message
