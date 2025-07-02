@@ -9,10 +9,11 @@ from services.modules.callback.line import line_bot_api, handler
 from helpers.converter import strip_html_tags
 from helpers.sqlite.template import post_ai_command
 # Repo
-from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name
+from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name, api_get_all_pin_export
 from bots.repositories.repo_bot_history import api_get_command_history
 from bots.repositories.repo_track import api_get_last_track
 from bots.repositories.repo_visit import api_get_visit_history
+from bots.repositories.repo_stats import api_get_dashboard
 
 userId = "474f7c95-9387-91ad-1886-c97239b24992"
 
@@ -50,9 +51,10 @@ def handle_command(event):
     elif source_type == "user":
         senderId = event.source.user_id
 
-    if message_text == "/show_my_pin":
+    if not any(x in message_text for x in ["/about_us", "/pin_details", "/bot_history"]):
         post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
 
+    if message_text == "/show_my_pin":
         def run_async():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -75,6 +77,54 @@ def handle_command(event):
                     line_bot_api.push_message(
                         senderId,
                         TextSendMessage(text="Error processing the response")
+                    )
+            finally:
+                loop.close()
+
+        threading.Thread(target=run_async).start()
+
+    elif message_text == "/export_pins":
+        def run_async():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                msg, _, uploaded_link = loop.run_until_complete(api_get_all_pin_export(user_id=userId))
+                
+                if uploaded_link is not None:
+                    uploaded_link_str = ''
+                    for idx, dt in enumerate(uploaded_link, start=1):
+                        uploaded_link_str += f'Part-{idx}\n{dt}\n\n'
+
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
+                    )
+                else:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=msg)
+                    )
+            finally:
+                loop.close()
+
+        threading.Thread(target=run_async).start()
+
+    elif message_text == "/dashboard":
+        def run_async():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                res, is_success = loop.run_until_complete(api_get_dashboard(user_id=userId))
+                
+                if is_success is not None:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=f"Showing dashboard...\n{res}\n")
+                    )
+                else:
+                    line_bot_api.push_message(
+                        senderId,
+                        TextSendMessage(text=res)
                     )
             finally:
                 loop.close()
@@ -106,8 +156,6 @@ def handle_command(event):
         threading.Thread(target=run_async).start()
 
     elif message_text == "/visit_last_30d" or message_text == "/all_visit_history":
-        post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
-
         def run_async():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -141,7 +189,6 @@ def handle_command(event):
         threading.Thread(target=run_async).start()
 
     elif message_text == "/live_tracker":
-        post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
         def run_async():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)

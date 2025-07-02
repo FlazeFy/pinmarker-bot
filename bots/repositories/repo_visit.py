@@ -13,7 +13,7 @@ async def api_get_visit_history(user_id: str, days:str):
             data = response.json()
 
             if data['count'] > 0:
-                if data['count'] < 30:
+                if data['count'] > 30:
                     list_file = []
                     list_download_url = []
                     part = 1

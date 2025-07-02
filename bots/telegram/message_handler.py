@@ -7,14 +7,14 @@ from services.modules.stats.stats_queries import get_stats
 from services.modules.stats.stats_capture import get_stats_capture
 from services.modules.user.user_command import update_sign_out
 # Helpers
-from bots.telegram.repositories.repo_stats import api_get_dashboard
+from bots.repositories.repo_stats import api_get_dashboard
 from bots.telegram.repositories.repo_pin import api_get_all_pin_name
-from bots.telegram.repositories.repo_pin import api_get_all_pin_export, api_get_all_pin_name
+from bots.telegram.repositories.repo_pin import api_get_all_pin_name
 from bots.telegram.repositories.repo_user import api_get_profile_by_telegram_id
 from bots.repositories.repo_visit import api_get_visit_history
 from bots.telegram.typography import send_long_message
 # Repo
-from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name
+from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name, api_get_all_pin_export
 from bots.repositories.repo_track import api_get_last_track
 from bots.repositories.repo_bot_history import api_get_command_history
 
@@ -50,7 +50,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif query.data == '/export_pins':
             post_ai_command(socmed_id=userTeleId, socmed_platform='telegram',command='/Export pin')
-            res, is_success = await api_get_all_pin_export(userId)
+            res, is_success, _ = await api_get_all_pin_export(userId)
             keyboard = [[InlineKeyboardButton("Back", callback_data='back')]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             if is_success:

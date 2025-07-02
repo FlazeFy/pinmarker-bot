@@ -14,7 +14,7 @@ async def api_get_command_history(socmed_id: str):
             data = response.json()
 
             if data['count'] > 0:
-                if data['count'] < 30:
+                if data['count'] > 30:
                     output = io.StringIO()
                     writer = csv.writer(output)
 
