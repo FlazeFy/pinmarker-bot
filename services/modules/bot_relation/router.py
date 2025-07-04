@@ -20,8 +20,11 @@ router_bot_relation = APIRouter()
                             "relation_type": "group",
                             "relation_platform":"line",
                             "relation_name":"Group Testing",
+                            "created_by":"474f7c95-9387-91ad-1886-c97239b24992",
                             "expired_at":"2024-08-26T21:31:00",
-                            "created_at":"2024-08-26T21:31:00"
+                            "created_at":"2024-08-26T21:31:00",
+                            "username": "tester123",
+                            "email": "newbie8801@gmail.com",
                         },
                     }
                 }

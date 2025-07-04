@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
-from services.modules.bot_relation.model import bot_relation
-from configs.configs import db
 from sqlalchemy import select, and_, insert
 from fastapi.responses import JSONResponse
 # Config
 from configs.const import RELATION_PLATFORM, RELATION_TYPE
+from configs.configs import db
 # Helper
 from helpers.validator import contains_item
 from helpers.generator import get_UUID
+# Model
+from services.modules.bot_relation.model import bot_relation
+from services.modules.user.user_model import user
 
 async def post_check_bot_relation(data:dict):
     try:
@@ -28,7 +30,12 @@ async def post_check_bot_relation(data:dict):
             bot_relation.c.relation_platform,
             bot_relation.c.relation_name,
             bot_relation.c.created_at,
-            bot_relation.c.expired_at
+            bot_relation.c.created_by,
+            bot_relation.c.expired_at,
+            user.c.username,
+            user.c.email,
+        ).join(
+            user, user.c.id == bot_relation.c.created_by
         ).where(
             and_(
                 bot_relation.c.context_id == context_id,

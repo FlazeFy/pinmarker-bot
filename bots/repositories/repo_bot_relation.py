@@ -12,18 +12,21 @@ async def api_post_check_bot_relation(context_id: str, source_type: str):
                     "relation_platform": "line"
                 }
             )
+            response.raise_for_status()
+            data = response.json()
+
             if response.status_code == 200:
-                return True, None
-            return False, None
+                return True, None, data['data']
+            return False, None, None
 
     except httpx.HTTPStatusError as e:
-        return False, f"HTTP error: {e.response.status_code}"
+        return False, f"HTTP error: {e.response.status_code}", None
 
     except httpx.RequestError as e:
-        return False, f"Request error: {str(e)}"
+        return False, "Something went wrong", None
 
     except Exception as e:
-        return False, f"Unexpected error: {str(e)}"
+        return False, "Something went wrong", None
     
 async def api_post_create_bot_relation(context_id: str, relation_name: str,source_type: str):
     try:

@@ -1,6 +1,6 @@
 import asyncio
 import threading
-from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage,TextSendMessage,LocationSendMessage
+from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage
 
 from bots.telegram.typography import send_long_message
 # Config
@@ -10,7 +10,7 @@ from services.modules.callback.line import line_bot_api, handler
 # Helper
 from helpers.converter import strip_html_tags
 from helpers.sqlite.template import post_ai_command
-from bots.line.helper import get_sender_id
+from bots.line.helper import get_sender_id, send_message_text, send_location_text
 # Repo
 from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name, api_get_all_pin_export
 from bots.repositories.repo_bot_history import api_get_command_history
@@ -19,7 +19,6 @@ from bots.repositories.repo_visit import api_get_visit_history
 from bots.repositories.repo_stats import api_get_dashboard
 from bots.repositories.repo_bot_relation import api_post_check_bot_relation, api_post_create_bot_relation
 
-userId = "474f7c95-9387-91ad-1886-c97239b24992"
 group_register_state = {}
 
 def chunk_buttons(buttons, chunk_size=3):
@@ -45,18 +44,17 @@ def handle_message(event):
 
                 # Validator
                 if len(groupName) > 75:
-                    line_bot_api.push_message(senderId, TextSendMessage(text="Group name must be under 75 characters 😢"))
+                    send_message_text(senderId, "Group name must be under 75 characters 😢")
                     return
 
                 # Repo : Create Bot Relation
                 loop.run_until_complete(api_post_create_bot_relation(senderId,groupName,source_type))
-
-                line_bot_api.push_message(senderId, TextSendMessage(text=f"Yay! you're now registered 🎉. Welcome to PinMarker, {groupName}"))
+                send_message_text(senderId, f"Yay! you're now registered 🎉. Welcome to PinMarker, {groupName}")
                 del group_register_state[senderId]
                 return
 
             # Repo : Check Bot Relation
-            is_registered, err = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+            is_registered, err, data = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
 
             keyword_triggered = (
                 ('/pinmarker' in message_text.lower() or 'pinmarker' in message_text.lower())
@@ -67,27 +65,28 @@ def handle_message(event):
             # Define Menu
             if is_registered:
                 if keyword_triggered:
-                    handle_menu_registered(event, source_type)
+                    handle_menu_registered(event, source_type, data)
                 else:
-                    handle_command(event)
+                    handle_command(event, data)
             else:
                 if message_text == "/register_group" and source_type in ['group', 'room']:
                     group_register_state[senderId] = 'awaiting_group_name'
-                    line_bot_api.push_message(senderId, TextSendMessage(text=ASK_NAME_REGISTER_MSG))
+                    send_message_text(senderId, ASK_NAME_REGISTER_MSG)
                 else:
                     handle_menu_unregistered(event, source_type)
 
         except Exception as e:
-            line_bot_api.push_message(senderId, TextSendMessage(text=str(e)))
+            send_message_text(senderId, "Error processing the response")
         finally:
             loop.close()
 
     threading.Thread(target=run_async).start()
         
-def handle_command(event):
+def handle_command(event, data):
     message = event.message
     message_text = message.text.lower()
     senderId = get_sender_id(event)
+    userId = data['created_by']
 
     if not any(x in message_text for x in ["/about_us", "/pin_details", "/bot_history"]):
         post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
@@ -100,22 +99,13 @@ def handle_command(event):
                 res, res_type, is_success, uploaded_link = loop.run_until_complete(api_get_all_pin(user_id=userId))
                 
                 if res_type == 'file' and is_success:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
-                    )
+                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
                 elif res_type == 'text' and is_success:
                     message_chunks = send_long_message(f"Showing Location Data:\n\n{strip_html_tags(res)}")
                     for chunk in message_chunks:
-                        line_bot_api.push_message(
-                            senderId,
-                            TextSendMessage(text=chunk)
-                        )
+                        send_message_text(senderId, chunk)
                 else:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text="Error processing the response")
-                    )
+                    send_message_text(senderId, "Error processing the response")
             finally:
                 loop.close()
 
@@ -133,15 +123,9 @@ def handle_command(event):
                     for idx, dt in enumerate(uploaded_link, start=1):
                         uploaded_link_str += f'Part-{idx}\n{dt}\n\n'
 
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
-                    )
+                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
                 else:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=msg)
-                    )
+                    send_message_text(senderId, msg)
             finally:
                 loop.close()
 
@@ -155,25 +139,16 @@ def handle_command(event):
                 res, is_success = loop.run_until_complete(api_get_dashboard(user_id=userId))
                 
                 if is_success is not None:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=f"Showing dashboard...\n{res}\n")
-                    )
+                    send_message_text(senderId, f"Showing dashboard...\n{res}\n")
                 else:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=res)
-                    )
+                    send_message_text(senderId, res)
             finally:
                 loop.close()
 
         threading.Thread(target=run_async).start()
 
     elif message_text == "/about_us":
-        line_bot_api.push_message(
-            senderId,
-            TextSendMessage(text=ABOUT_US)
-        )
+        send_message_text(senderId, ABOUT_US)
 
     elif message_text == "/pin_details":
         def run_async():
@@ -184,10 +159,7 @@ def handle_command(event):
                 
                 message_chunks = send_long_message(strip_html_tags(res))
                 for chunk in message_chunks:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=chunk)
-                    )
+                    send_message_text(senderId, chunk)
             finally:
                 loop.close()
 
@@ -205,22 +177,13 @@ def handle_command(event):
                     for idx, dt in enumerate(uploaded_link, start=1):
                         uploaded_link_str += f'Part-{idx}\n{dt}\n\n'
 
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
-                    )
+                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
                 elif type == 'text':
                     message_chunks = send_long_message(strip_html_tags(res))
                     for chunk in message_chunks:
-                        line_bot_api.push_message(
-                            senderId,
-                            TextSendMessage(text=chunk)
-                        )
+                        send_message_text(senderId, chunk)
                 else:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text="Error processing the response")
-                    )
+                    send_message_text(senderId, "Error processing the response")
             finally:
                 loop.close()
 
@@ -234,26 +197,13 @@ def handle_command(event):
                 track_lat, track_long, msg, is_success = loop.run_until_complete(api_get_last_track(userId))
                 
                 if is_success:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=f"Showing last tracking...\n{msg}")
-                    )
+                    send_message_text(senderId, f"Showing last tracking...\n{msg}")
 
                     if track_lat is not None and track_long is not None:
-                        line_bot_api.push_message(
-                            senderId,  
-                            LocationSendMessage(
-                                title='Live Tracker Position',
-                                address=f'{track_lat}, {track_long}',
-                                latitude=track_lat,
-                                longitude=track_long
-                            )
-                        )
+                        coor = f'{track_lat}, {track_long}'
+                        send_location_text(senderId, 'Live Tracker Position', coor, track_lat, track_long)
                 else:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text="Error processing the response")
-                    )
+                    send_message_text(senderId, "Error processing the response")
             finally:
                 loop.close()
 
@@ -267,46 +217,30 @@ def handle_command(event):
                 res, res_type, is_success, uploaded_link = loop.run_until_complete(api_get_command_history(senderId))
                 
                 if res_type == 'file' and is_success:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text=f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
-                    )
+                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
                 elif res_type == 'text' and is_success:
                     message_chunks = send_long_message(f"Showing bot history...\n\n{strip_html_tags(res)}")
                     for chunk in message_chunks:
-                        line_bot_api.push_message(
-                            senderId,
-                            TextSendMessage(text=chunk)
-                        )
+                        send_message_text(senderId, chunk)
                 else:
-                    line_bot_api.push_message(
-                        senderId,
-                        TextSendMessage(text="Error processing the response")
-                    )
+                    send_message_text(senderId, "Error processing the response")
             finally:
                 loop.close()
 
         threading.Thread(target=run_async).start()
 
-def handle_menu_registered(event,source_type):
+def handle_menu_registered(event,source_type,data):
     button_chunks = chunk_buttons(MENU_LIST_USER)
+    username = data['username']
 
     columns = []
     for i, chunk in enumerate(button_chunks):
         actions = [MessageAction(label=btn["label"], text=btn["data"]) for btn in chunk]
 
         if i == 0:
-            column = CarouselColumn(
-                title="PinMarker Bot",
-                text="Hello @[username], please choose an option :",
-                actions=actions
-            )
+            column = CarouselColumn(title="PinMarker Bot",text=f"Hello @{username}, please choose an option :",actions=actions)
         else:
-            column = CarouselColumn(
-                title="PinMarker Bot",
-                text="Choose an option :",
-                actions=actions
-            )
+            column = CarouselColumn(title="PinMarker Bot", text="Choose an option :", actions=actions)
 
         columns.append(column)
 
@@ -321,8 +255,8 @@ def handle_menu_registered(event,source_type):
 def handle_menu_unregistered(event,source_type):
     senderId = get_sender_id(event)
 
-    line_bot_api.push_message(senderId, TextSendMessage(text=GREETING_MSG))
-    line_bot_api.push_message(senderId, TextSendMessage(text=GREETING_UNKNOWN_USER_MSG))
+    send_message_text(senderId, GREETING_MSG)
+    send_message_text(senderId, GREETING_UNKNOWN_USER_MSG)
 
     if source_type == "group":
         button_chunks = chunk_buttons(MENU_LIST_UNKNOWN_GROUP)
