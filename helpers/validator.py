@@ -1,3 +1,5 @@
+import re
+
 def validate_data(data, field_name: str, field_type: str, max_length: int = None, min_length: int = None, is_required: bool = False):
     res = []
 
@@ -49,3 +51,7 @@ def validate_data(data, field_name: str, field_type: str, max_length: int = None
 
 def contains_item(text: str, items: list[str]) -> bool:
     return any(item in text for item in items)
+
+def contains_link(text):
+    url_pattern = r'(https?://\S+|www\.\S+)'
+    return re.search(url_pattern, text) is not None

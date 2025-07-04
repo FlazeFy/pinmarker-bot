@@ -4,11 +4,15 @@ from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, C
 
 from bots.telegram.typography import send_long_message
 # Config
-from configs.menu_list import MENU_LIST_USER, ABOUT_US, MENU_LIST_UNKNOWN_GROUP, GREETING_MSG, GREETING_UNKNOWN_USER_MSG, ASK_NAME_REGISTER_MSG
+from configs.menu_list import (
+    MENU_LIST_USER, ABOUT_US, MENU_LIST_UNKNOWN_GROUP, GREETING_MSG, GREETING_UNKNOWN_USER_MSG, ASK_NAME_REGISTER_MSG, DETECT_LINK,
+    ASK_COORDINATE, ASK_PIN_CATEGORY, THANKS_PIN_CREATE,ASK_PIN_NAME
+)
 # Services
 from services.modules.callback.line import line_bot_api, handler 
 # Helper
 from helpers.converter import strip_html_tags
+from helpers.validator import contains_link
 from helpers.sqlite.template import post_ai_command
 from bots.line.helper import get_sender_id, send_message_text, send_location_text
 # Repo
@@ -20,6 +24,7 @@ from bots.repositories.repo_stats import api_get_dashboard
 from bots.repositories.repo_bot_relation import api_post_check_bot_relation, api_post_create_bot_relation
 
 group_register_state = {}
+marker_create_state = {}
 
 def chunk_buttons(buttons, chunk_size=3):
     chunks = [buttons[i:i + chunk_size] for i in range(0, len(buttons), chunk_size)]
@@ -38,13 +43,23 @@ def handle_message(event):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            # Check if this chat is waiting for a group name
+            keyword_start = (
+                ('/pinmarker' in message_text.lower() or 'pinmarker' in message_text.lower())
+                if source_type in ['group', 'room']
+                else '/start' in message_text.lower()
+            )
+
+            # Handle Register State
+            # Check if chat is waiting for a group name
             if group_register_state.get(senderId) == 'awaiting_group_name':
                 groupName = message_text
 
-                # Validator
+                # Validator 
                 if len(groupName) > 75:
                     send_message_text(senderId, "Group name must be under 75 characters 😢")
+                    return
+                if contains_link(groupName):
+                    send_message_text(senderId, "Group name must not contain any link 😢")
                     return
 
                 # Repo : Create Bot Relation
@@ -52,28 +67,91 @@ def handle_message(event):
                 send_message_text(senderId, f"Yay! you're now registered 🎉. Welcome to PinMarker, {groupName}")
                 del group_register_state[senderId]
                 return
+            
+            #   Marker Creation Flow
+            if marker_create_state:
+                if marker_create_state == 'awaiting_coordinate':
+                    # Validate coordinate format
+                    parts = message_text.split(',')
+                    if len(parts) == 2:
+                        try:
+                            lat = float(parts[0].strip())
+                            lon = float(parts[1].strip())
+                            marker_create_state[senderId] = {
+                                'awaiting': 'awaiting_pin_name',
+                                'lat': lat,
+                                'lon': lon
+                            }
+                            send_message_text(senderId, ASK_PIN_NAME)
+                            return
+                        except ValueError:
+                            send_message_text(senderId, "Please send valid coordinates (e.g., '-6.2000, 106.8166')")
+                            return
+                    else:
+                        send_message_text(senderId, "Please send coordinates in the format: latitude, longitude")
+                        return
 
-            # Repo : Check Bot Relation
-            is_registered, err, data = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+                elif isinstance(marker_create_state, dict) and marker_create_state.get('awaiting') == 'awaiting_pin_name':
+                    marker_create_state['name'] = message_text
+                    marker_create_state['awaiting'] = 'awaiting_category'
+                    send_message_text(senderId, ASK_PIN_CATEGORY)
+                    return
 
-            keyword_triggered = (
-                ('/pinmarker' in message_text.lower() or 'pinmarker' in message_text.lower())
-                if source_type in ['group', 'room']
-                else '/start' in message_text.lower()
-            )
+                elif isinstance(marker_create_state, dict) and marker_create_state.get('awaiting') == 'awaiting_category':
+                    marker_create_state['category'] = message_text
 
-            # Define Menu
-            if is_registered:
-                if keyword_triggered:
-                    handle_menu_registered(event, source_type, data)
+                    # Repo : Create Marker
+                    # ....
+
+                    send_message_text(senderId, THANKS_PIN_CREATE)
+                    del marker_create_state[senderId]
+                    return
+
+            if contains_link(message_text) and group_register_state.get(senderId) != 'awaiting_group_name':
+                send_message_text(senderId, DETECT_LINK)
+
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TemplateSendMessage(
+                        alt_text="Choose an option :",
+                        template=CarouselTemplate(columns=CarouselColumn(
+                            title="Add a New Marker",
+                            text="Choose an option :",
+                            actions=[
+                                MessageAction(label="Yes, save it!", text="yes_create_marker"),
+                                MessageAction(label="No, ignore this", text="no_create_marker")
+                            ]
+                        ))
+                    )
+                )
+
+            if message_text == "/yes_create_marker" and group_register_state.get(senderId) != 'awaiting_group_name':
+                send_message_text(senderId, ASK_COORDINATE)
+                marker_create_state[senderId] = 'awaiting_coordinate'
+                return
+            
+            if message_text == "/no_create_marker" and group_register_state.get(senderId) != 'awaiting_group_name':
+                send_message_text(senderId, ASK_COORDINATE)
+                marker_create_state[senderId] = {}
+                return
+
+            # Start Command
+            if keyword_start and not contains_link(message_text):
+                # Repo : Check Bot Relation
+                is_registered, err, data = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+
+                # Define Menu
+                if is_registered:
+                    if keyword_start:
+                        handle_menu_registered(event, source_type, data)
+                    else:
+                        handle_command(event, data)
                 else:
-                    handle_command(event, data)
-            else:
-                if message_text == "/register_group" and source_type in ['group', 'room']:
-                    group_register_state[senderId] = 'awaiting_group_name'
-                    send_message_text(senderId, ASK_NAME_REGISTER_MSG)
-                else:
-                    handle_menu_unregistered(event, source_type)
+                    if message_text == "/register_group" and source_type in ['group', 'room']:
+                        group_register_state[senderId] = 'awaiting_group_name'
+                        send_message_text(senderId, ASK_NAME_REGISTER_MSG)
+                    elif keyword_start:
+                        handle_menu_unregistered(event, source_type)
 
         except Exception as e:
             send_message_text(senderId, "Error processing the response")
