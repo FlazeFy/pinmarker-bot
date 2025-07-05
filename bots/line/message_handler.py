@@ -141,18 +141,19 @@ def handle_message(event):
                         pin_long = str(marker_create_state[senderId]['pin_long'])
                         pin_desc = marker_create_state[senderId]['pin_desc']
                         pin_name = marker_create_state[senderId]['pin_name']
+                        pin_address = marker_create_state[senderId].get('pin_address', None)
                         data = {
                             "pin_name": pin_name,
                             "pin_desc": pin_desc,
                             "pin_lat": pin_lat,
                             "pin_long": pin_long,
                             "pin_category": category,
-                            "pin_address": None,
+                            "pin_address": pin_address,
                         }
                         msg, is_success = loop.run_until_complete(api_post_create_pin(data,data_check_relation['created_by']))
 
                         if is_success == True:
-                            send_location_text(senderId, pin_name, pin_desc, pin_lat, pin_long)
+                            send_location_text(senderId, pin_name, pin_address if pin_address is not None else pin_desc, pin_lat, pin_long)
                             send_message_text(senderId, THANKS_PIN_CREATE)
                         elif is_success == False:
                             send_message_text(senderId, msg)
@@ -178,7 +179,7 @@ def handle_message(event):
                                     title="Add a New Marker",
                                     text="Choose an option :",
                                     actions=[
-                                        MessageAction(label="Yes, save it!", text="/yes_create_marker"),
+                                        MessageAction(label="Yes, save it!", text="/yes_create_marker-via_link"),
                                         MessageAction(label="No, ignore this", text="/no_create_marker")
                                     ]
                                 )
@@ -196,11 +197,18 @@ def handle_message(event):
                     send_message_error(senderId, err_check_relation)
                     return 
                 
-            if message_text == "/yes_create_marker":
-                send_message_text(senderId, ASK_COORDINATE)
-                if senderId not in marker_create_state:
-                    marker_create_state[senderId] = {}
-                marker_create_state[senderId]['step'] = 'awaiting_coordinate'
+            if message_text.startswith("/yes_create_marker"):
+                if message_text == "/yes_create_marker-via_link":
+                    send_message_text(senderId, ASK_COORDINATE)
+                    if senderId not in marker_create_state:
+                        marker_create_state[senderId] = {}
+                    marker_create_state[senderId]['step'] = 'awaiting_coordinate'
+                elif message_text == "/yes_create_marker-via_shareloc":
+                    marker_create_state[senderId]['pin_desc'] = None
+                    marker_create_state[senderId]['step'] = 'awaiting_pin_name'
+                    send_message_text(senderId, ASK_PIN_NAME)
+                else:
+                    send_message_error(senderId, "Error processing the response")
                 return
 
             if message_text == "/no_create_marker":
@@ -248,7 +256,7 @@ def handle_message(event):
                 handle_command(event, data_check_relation)
 
         except Exception as e:
-            send_message_text(senderId, e.args)
+            send_message_error(senderId, str(e))
         finally:
             loop.close()
 

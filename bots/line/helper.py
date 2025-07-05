@@ -42,13 +42,18 @@ def send_message_error(senderId, message: str):
 
 def send_location_text(senderId, title, address: str, lat, long):
     if IS_TEST_MODE == "false":
+        if not address:
+            address = "Unknown location"
+        elif len(address) > 100:
+            address = address[:96] + " ..."
+            
         line_bot_api.push_message(
             senderId,  
             LocationSendMessage(
                 title=title,
                 address=address,
                 latitude=lat,
-                longitude=long
+                longitude=long,
             )
         )
     else:
