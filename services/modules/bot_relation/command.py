@@ -127,3 +127,47 @@ async def post_create_bot_relation(data:dict):
     except Exception as e:
         db.connect().rollback()
         raise
+
+async def sign_out_bot_relation(data: dict):
+    try:
+        context_id = data.get('context_id')
+        relation_type = data.get('relation_type')
+        relation_platform = data.get('relation_platform')
+
+        # Validator
+        if not contains_item(relation_type, RELATION_TYPE):
+            return JSONResponse(status_code=422, content={"message": "relation type is not valid"})
+        if not contains_item(relation_platform, RELATION_PLATFORM):
+            return JSONResponse(status_code=422, content={"message": "relation platform is not valid"})
+
+        # Query builder
+        delete_query = bot_relation.delete().where(
+            and_(
+                bot_relation.c.context_id == context_id,
+                bot_relation.c.relation_type == relation_type,
+                bot_relation.c.relation_platform == relation_platform,
+            )
+        )
+
+        conn = db.connect()
+        result = conn.execute(delete_query)
+        conn.commit()
+        conn.close()
+
+        if result.rowcount > 0:
+            return JSONResponse(
+                status_code=200,
+                content={"message": "Relation deleted"}
+            )
+        else:
+            return JSONResponse(
+                status_code=404,
+                content={"message": "Relation not found"}
+            )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500, 
+            content={
+                "message": "Something went wrong"
+            }
+        )

@@ -33,5 +33,7 @@ ASK_COORDINATE= "If so, please share your location or send me a coordinate (lati
 ASK_PIN_NAME= "What's the name of this marker?"
 DETECT_SHARELOC_NEW= "Hey there! 😊 I noticed you sent a shared location. I've checked the coordinates you sent, and it looks like this spot is a new location.\n\nWould you like me to add a new marker?"
 THANKS_PIN_CREATE="Awesome! 🎉 Your new location has been added to the map"
+
 # Others
 ABOUT_US = "PinMarker is an apps that store data about marked location on your maps. You can save location and separate it based on category or list. You can collaborate and share your saved location with all people. We also provide stats so you can monitoring your saved location.\n\nWe available on\nWeb : https://pinmarker.leonardhors.com/\n Telegram BOT : @Pinmarker_bot\nDiscord BOT : PinMarker#3505\nLine BOT : https://line.me/R/ti/p/@349lgagt\nMobile Apps : \n\nParts of FlazenApps"
+SIGN_OUT_GOOD_BYE = "Thank you for use my service. See you later 👋🥹"

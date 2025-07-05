@@ -1,15 +1,10 @@
 import asyncio
 import threading
 from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage
-from bots.line.command.dashboard_command import dashboard_command
-from bots.line.command.export_pins_command import export_pins_command
-from bots.line.command.live_tracker_command import live_tracker_command
-from bots.line.command.pin_details_command import pin_details_command
-from bots.line.command.show_my_pin_command import show_my_pin_command
-from bots.line.command.visit_history_command import visit_history_command
+
 # Config
 from configs.menu_list import (
-    ABOUT_US, ASK_NAME_REGISTER_MSG, DETECT_LINK,
+    ABOUT_US, ASK_NAME_REGISTER_MSG, DETECT_LINK, SIGN_OUT_GOOD_BYE,
     ASK_COORDINATE, THANKS_PIN_CREATE,ASK_PIN_NAME
 )
 # Services
@@ -20,12 +15,18 @@ from helpers.sqlite.query import post_ai_command
 from bots.line.helper import chunk_buttons, get_sender_id, send_location_text, send_message_text, send_message_error
 # Repo
 from bots.repositories.repo_pin import api_post_create_pin
-from bots.repositories.repo_bot_relation import api_post_check_bot_relation, api_post_create_bot_relation
+from bots.repositories.repo_bot_relation import api_post_check_bot_relation, api_post_create_bot_relation, api_post_sign_out_bot_relation
 from bots.repositories.repo_dictionary import api_get_dictionary_by_type
 # Command
 from bots.line.command.menu_registered_command import menu_registered_command
 from bots.line.command.menu_unregistered_command import menu_unregistered_command
 from bots.line.command.bot_history_command import bot_history_command
+from bots.line.command.dashboard_command import dashboard_command
+from bots.line.command.export_pins_command import export_pins_command
+from bots.line.command.live_tracker_command import live_tracker_command
+from bots.line.command.pin_details_command import pin_details_command
+from bots.line.command.show_my_pin_command import show_my_pin_command
+from bots.line.command.visit_history_command import visit_history_command
 # State Management
 from bots.line.state_management import group_register_state, marker_create_state
 
@@ -47,7 +48,7 @@ def handle_message(event):
             is_contain_link = contains_link(message_text)
 
             # Repo : Check Bot Relation
-            is_registered, err_check_relation, data_check_relation = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+            is_registered, err_check_relation, data_check_relation = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type,'line'))
 
             # Handle Register State
             # Check if chat is waiting for a group name
@@ -208,6 +209,23 @@ def handle_message(event):
                 del marker_create_state[senderId]
                 return
             
+            # Sign Out Flow
+            if message_text == "/yes_sign_out":
+                # Repo : Sign Out Bot Relation
+                is_success, err_sign_out = loop.run_until_complete(api_post_sign_out_bot_relation(senderId, source_type,'line'))
+
+                if is_success == True:
+                    send_message_text(senderId, SIGN_OUT_GOOD_BYE)
+                elif is_success == False:
+                    send_message_text(senderId, f"{err_check_relation}, account already sign out")
+                else:
+                    send_message_error(senderId, err_sign_out)
+                return
+
+            if message_text == "/no_sign_out":
+                send_message_text(senderId, "Okay, noted it 🫡")
+                return
+            
             if message_text == "/register_group" and source_type in ['group', 'room']:
                 group_register_state[senderId] = 'awaiting_group_name'
                 send_message_text(senderId, ASK_NAME_REGISTER_MSG)
@@ -241,6 +259,7 @@ def handle_command(event, data):
     message_text = message.text.lower()
     senderId = get_sender_id(event)
     userId = data['created_by']
+    username = data['username']
 
     if not any(x in message_text for x in ["/about_us", "/pin_details", "/bot_history"]):
         post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
@@ -268,4 +287,22 @@ def handle_command(event, data):
 
     elif message_text == "/bot_history":
         threading.Thread(target=bot_history_command, args=(senderId,)).start()
+
+    elif message_text == "/exit_bot":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TemplateSendMessage(
+                alt_text="Choose an option :",
+                template=CarouselTemplate(columns=[
+                    CarouselColumn(
+                        title="Are you sure?",
+                        text=f"Choose an option to sign out from {username}'s account:",
+                        actions=[
+                            MessageAction(label="Yes, Sign out", text="/yes_sign_out"),
+                            MessageAction(label="Maybe later", text="/no_sign_out")
+                        ]
+                    )
+                ])
+            )
+        )
 

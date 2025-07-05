@@ -35,7 +35,7 @@ def handle_location(event):
         asyncio.set_event_loop(loop)
         try:
             # Repo : Check Bot Relation
-            is_registered, err, data = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+            is_registered, err, data = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type, 'line'))
 
             if is_registered:
                 username = data['username']
