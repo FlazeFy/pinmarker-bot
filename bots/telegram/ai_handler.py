@@ -12,7 +12,7 @@ from configs.menu_list import GREETING_MSG
 # Helper
 from bots.telegram.typography import send_long_message
 from helpers.generator import get_city_from_coordinate
-from helpers.sqlite.template import post_ai_command
+from helpers.sqlite.query import post_ai_command
 from bots.repositories.repo_user import api_get_profile_by_telegram_id
 from bots.repositories.repo_stats import api_get_dashboard
 # Repo

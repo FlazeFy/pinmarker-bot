@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.sql.functions import concat
 
 # Services
-from helpers.sqlite.template import get_user_timezone
+from helpers.sqlite.query import get_user_timezone
 
 now = datetime.now()
 now_str = now.strftime("%Y-%m-%d%H:%M:%S")

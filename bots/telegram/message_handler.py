@@ -16,7 +16,7 @@ from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name, ap
 from bots.repositories.repo_track import api_get_last_track
 from bots.repositories.repo_bot_history import api_get_command_history
 
-from helpers.sqlite.template import post_ai_command
+from helpers.sqlite.query import post_ai_command
 from configs.menu_list import MENU_LIST_USER,ABOUT_US
 
 async def login_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

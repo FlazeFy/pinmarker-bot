@@ -6,7 +6,7 @@ import pytz
 from datetime import datetime
 
 # Helpers
-from helpers.sqlite.template import post_user_timezone
+from helpers.sqlite.query import post_user_timezone
 
 # Services
 from bots.repositories.repo_user import api_get_profile_by_telegram_id

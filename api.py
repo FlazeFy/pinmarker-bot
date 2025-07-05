@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from helpers.sqlite.template import init_db_sqlite
 from services.modules.track.router import router_track
 from services.modules.stats.router import router_stats
 from services.modules.pin.router import router_pin
@@ -26,6 +27,7 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://pinmarker-36552-default-rtdb.firebaseio.com/',
     'storageBucket': 'pinmarker-36552.appspot.com'
 })
+init_db_sqlite()
 
 origins = [
     "http://localhost",

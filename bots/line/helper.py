@@ -53,3 +53,10 @@ def send_location_text(senderId, title, address: str, lat, long):
         )
     else:
         logging.info(f"[TEST MODE] Location send to {senderId}: title='{title}', address='{address}', lat={lat}, long={long}")
+
+def chunk_buttons(buttons, chunk_size=3):
+    chunks = [buttons[i:i + chunk_size] for i in range(0, len(buttons), chunk_size)]
+    for chunk in chunks:
+        while len(chunk) < chunk_size:
+            chunk.append({"label": " ", "data": " "})
+    return chunks

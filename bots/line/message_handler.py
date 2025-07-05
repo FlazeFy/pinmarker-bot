@@ -1,38 +1,33 @@
 import asyncio
 import threading
 from linebot.models import TemplateSendMessage, MessageAction, CarouselColumn, CarouselTemplate, MessageEvent, TextMessage
-
-from bots.telegram.typography import send_long_message
+from bots.line.command.dashboard_command import dashboard_command
+from bots.line.command.export_pins_command import export_pins_command
+from bots.line.command.live_tracker_command import live_tracker_command
+from bots.line.command.pin_details_command import pin_details_command
+from bots.line.command.show_my_pin_command import show_my_pin_command
+from bots.line.command.visit_history_command import visit_history_command
 # Config
 from configs.menu_list import (
-    MENU_LIST_USER, ABOUT_US, MENU_LIST_UNKNOWN_GROUP, GREETING_MSG, GREETING_UNKNOWN_USER_MSG, ASK_NAME_REGISTER_MSG, DETECT_LINK,
-    ASK_COORDINATE, ASK_PIN_CATEGORY, THANKS_PIN_CREATE,ASK_PIN_NAME
+    ABOUT_US, ASK_NAME_REGISTER_MSG, DETECT_LINK,
+    ASK_COORDINATE, THANKS_PIN_CREATE,ASK_PIN_NAME
 )
 # Services
 from services.modules.callback.line import line_bot_api, handler 
 # Helper
-from helpers.converter import strip_html_tags
 from helpers.validator import contains_link
-from helpers.sqlite.template import post_ai_command
-from bots.line.helper import get_sender_id, send_message_text, send_location_text, send_message_error
+from helpers.sqlite.query import post_ai_command
+from bots.line.helper import chunk_buttons, get_sender_id, send_location_text, send_message_text, send_message_error
 # Repo
-from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name, api_get_all_pin_export, api_post_create_pin
-from bots.repositories.repo_bot_history import api_get_command_history
-from bots.repositories.repo_track import api_get_last_track
-from bots.repositories.repo_visit import api_get_visit_history
-from bots.repositories.repo_stats import api_get_dashboard
+from bots.repositories.repo_pin import api_post_create_pin
 from bots.repositories.repo_bot_relation import api_post_check_bot_relation, api_post_create_bot_relation
 from bots.repositories.repo_dictionary import api_get_dictionary_by_type
-
-group_register_state = {}
-marker_create_state = {}
-
-def chunk_buttons(buttons, chunk_size=3):
-    chunks = [buttons[i:i + chunk_size] for i in range(0, len(buttons), chunk_size)]
-    for chunk in chunks:
-        while len(chunk) < chunk_size:
-            chunk.append({"label": " ", "data": " "})
-    return chunks
+# Command
+from bots.line.command.menu_registered_command import menu_registered_command
+from bots.line.command.menu_unregistered_command import menu_unregistered_command
+from bots.line.command.bot_history_command import bot_history_command
+# State Management
+from bots.line.state_management import group_register_state, marker_create_state
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -49,6 +44,10 @@ def handle_message(event):
                 if source_type in ['group', 'room']
                 else '/start' in message_text.lower()
             )
+            is_contain_link = contains_link(message_text)
+
+            # Repo : Check Bot Relation
+            is_registered, err_check_relation, data_check_relation = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
 
             # Handle Register State
             # Check if chat is waiting for a group name
@@ -94,13 +93,11 @@ def handle_message(event):
                 marker_create_state[senderId]['pin_name'] = message_text
                 marker_create_state[senderId]['step'] = 'awaiting_category'
 
-                # Repo : Check Bot Relation
-                _, msg, data_relation = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
-                if data_relation is not None:
+                if data_check_relation is not None:
                     # Repo : Get Dictionary (Pin Category By Type)
-                    msg, data = loop.run_until_complete(api_get_dictionary_by_type('pin_category', data_relation['created_by']))
+                    _, data = loop.run_until_complete(api_get_dictionary_by_type('pin_category', data_check_relation['created_by']))
                 else:
-                    send_message_error(senderId, msg)
+                    send_message_error(senderId, err_check_relation)
                     return
 
                 # Marker Creation Flow : Show category options via menu
@@ -137,22 +134,24 @@ def handle_message(event):
                     category = category.replace("_", " ").title()
                     marker_create_state[senderId]['pin_category'] = category
 
-                    # Repo : Check Bot Relation
-                    _, msg, data_relation = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
-                    if data_relation is not None:
+                    if data_check_relation is not None:
                         # Repo: Create Marker
+                        pin_lat = str(marker_create_state[senderId]['pin_lat'])
+                        pin_long = str(marker_create_state[senderId]['pin_long'])
+                        pin_desc = marker_create_state[senderId]['pin_desc']
+                        pin_name = marker_create_state[senderId]['pin_name']
                         data = {
-                            "pin_name": marker_create_state[senderId]['pin_name'],
-                            "pin_desc": marker_create_state[senderId]['pin_desc'],
-                            "pin_lat": str(marker_create_state[senderId]['pin_lat']),
-                            "pin_long": str(marker_create_state[senderId]['pin_long']),
+                            "pin_name": pin_name,
+                            "pin_desc": pin_desc,
+                            "pin_lat": pin_lat,
+                            "pin_long": pin_long,
                             "pin_category": category,
                             "pin_address": None,
                         }
-                        print(data)
-                        msg, is_success = loop.run_until_complete(api_post_create_pin(data,data_relation['created_by']))
+                        msg, is_success = loop.run_until_complete(api_post_create_pin(data,data_check_relation['created_by']))
 
                         if is_success == True:
+                            send_location_text(senderId, pin_name, pin_desc, pin_lat, pin_long)
                             send_message_text(senderId, THANKS_PIN_CREATE)
                         elif is_success == False:
                             send_message_text(senderId, msg)
@@ -161,14 +160,12 @@ def handle_message(event):
                         del marker_create_state[senderId]
                         return
                     else:
-                        send_message_error(senderId, msg)
+                        send_message_error(senderId, err_check_relation)
                         return
 
             # Marker Creation Flow : Detect link to start marker creation
-            if contains_link(message_text) and group_register_state.get(senderId) != 'awaiting_group_name':
-                # Repo : Check Bot Relation
-                is_registered, err, _ = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
-                if is_registered and err is None:
+            if is_contain_link and group_register_state.get(senderId) != 'awaiting_group_name':
+                if is_registered and err_check_relation is None:
                     send_message_text(senderId, DETECT_LINK)
 
                     line_bot_api.reply_message(
@@ -192,10 +189,10 @@ def handle_message(event):
 
                     marker_create_state[senderId]['pin_desc'] = message_text
                     return
-                elif not is_registered and err is None:
+                elif not is_registered and err_check_relation is None:
                     return 
                 else:
-                    send_message_error(senderId, err)
+                    send_message_error(senderId, err_check_relation)
                     return 
                 
             if message_text == "/yes_create_marker":
@@ -217,21 +214,20 @@ def handle_message(event):
                 return
 
             # Start Command
-            if keyword_start and not contains_link(message_text):
-                # Repo : Check Bot Relation
-                is_registered, err, data = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
-
+            if keyword_start and not is_contain_link:
                 # Define Menu
-                if err is None:
+                if err_check_relation is None:
                     if is_registered:
                         if keyword_start:
-                            handle_menu_registered(event, source_type, data)
+                            menu_registered_command(event, source_type, data_check_relation)
                         else:
-                            handle_command(event, data)
+                            handle_command(event, data_check_relation)
                     else:
-                        handle_menu_unregistered(event, source_type)
+                        menu_unregistered_command(event, source_type)
                 else: 
-                    send_message_error(senderId, err)
+                    send_message_error(senderId, err_check_relation)
+            elif not is_contain_link:
+                handle_command(event, data_check_relation)
 
         except Exception as e:
             send_message_text(senderId, e.args)
@@ -250,189 +246,26 @@ def handle_command(event, data):
         post_ai_command(socmed_id=senderId, socmed_platform='line',command=message_text)
 
     if message_text == "/show_my_pin":
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                res, res_type, is_success, uploaded_link = loop.run_until_complete(api_get_all_pin(user_id=userId))
-                
-                if res_type == 'file' and is_success:
-                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
-                elif res_type == 'text' and is_success:
-                    message_chunks = send_long_message(f"Showing Location Data:\n\n{strip_html_tags(res)}")
-                    for chunk in message_chunks:
-                        send_message_text(senderId, chunk)
-                else:
-                    send_message_text(senderId, "Error processing the response")
-            finally:
-                loop.close()
-
-        threading.Thread(target=run_async).start()
+        threading.Thread(target=show_my_pin_command, args=(senderId, userId)).start()
 
     elif message_text == "/export_pins":
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                msg, _, uploaded_link = loop.run_until_complete(api_get_all_pin_export(user_id=userId))
-                
-                if uploaded_link is not None:
-                    uploaded_link_str = ''
-                    for idx, dt in enumerate(uploaded_link, start=1):
-                        uploaded_link_str += f'Part-{idx}\n{dt}\n\n'
-
-                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
-                else:
-                    send_message_text(senderId, msg)
-            finally:
-                loop.close()
-
-        threading.Thread(target=run_async).start()
+        threading.Thread(target=export_pins_command, args=(senderId, userId)).start()
 
     elif message_text == "/dashboard":
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                res, is_success = loop.run_until_complete(api_get_dashboard(user_id=userId))
-                
-                if is_success is not None:
-                    send_message_text(senderId, f"Showing dashboard...\n{res}\n")
-                else:
-                    send_message_text(senderId, res)
-            finally:
-                loop.close()
-
-        threading.Thread(target=run_async).start()
+        threading.Thread(target=dashboard_command, args=(senderId, userId)).start()
 
     elif message_text == "/about_us":
         send_message_text(senderId, ABOUT_US)
 
     elif message_text == "/pin_details":
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                res = loop.run_until_complete(api_get_all_pin_name(userId))
-                
-                message_chunks = send_long_message(strip_html_tags(res))
-                for chunk in message_chunks:
-                    send_message_text(senderId, chunk)
-            finally:
-                loop.close()
-
-        threading.Thread(target=run_async).start()
+        threading.Thread(target=pin_details_command, args=(senderId, userId,)).start()
 
     elif message_text == "/visit_last_30d" or message_text == "/all_visit_history":
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                res, type, uploaded_link = loop.run_until_complete(api_get_visit_history(userId, '30' if message_text == '/visit_last_30d' else 'all'))
-                
-                if type == 'file':
-                    uploaded_link_str = ''
-                    for idx, dt in enumerate(uploaded_link, start=1):
-                        uploaded_link_str += f'Part-{idx}\n{dt}\n\n'
-
-                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link_str}")
-                elif type == 'text':
-                    message_chunks = send_long_message(strip_html_tags(res))
-                    for chunk in message_chunks:
-                        send_message_text(senderId, chunk)
-                else:
-                    send_message_text(senderId, "Error processing the response")
-            finally:
-                loop.close()
-
-        threading.Thread(target=run_async).start()
+        threading.Thread(target=visit_history_command, args=(senderId, userId, message_text,)).start()
 
     elif message_text == "/live_tracker":
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                track_lat, track_long, msg, is_success = loop.run_until_complete(api_get_last_track(userId))
-                
-                if is_success:
-                    send_message_text(senderId, f"Showing last tracking...\n{msg}")
-
-                    if track_lat is not None and track_long is not None:
-                        coor = f'{track_lat}, {track_long}'
-                        send_location_text(senderId, 'Live Tracker Position', coor, track_lat, track_long)
-                else:
-                    send_message_text(senderId, "Error processing the response")
-            finally:
-                loop.close()
-
-        threading.Thread(target=run_async).start()
+        threading.Thread(target=live_tracker_command, args=(senderId, userId,)).start()
 
     elif message_text == "/bot_history":
-        def run_async():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                res, res_type, is_success, uploaded_link = loop.run_until_complete(api_get_command_history(senderId))
-                
-                if res_type == 'file' and is_success:
-                    send_message_text(senderId, f"Generated file (CSV) is not supported to send directly. But you can access this uploaded file from my storage.\n\n{uploaded_link}")
-                elif res_type == 'text' and is_success:
-                    message_chunks = send_long_message(f"Showing bot history...\n\n{strip_html_tags(res)}")
-                    for chunk in message_chunks:
-                        send_message_text(senderId, chunk)
-                else:
-                    send_message_text(senderId, "Error processing the response")
-            finally:
-                loop.close()
-
-        threading.Thread(target=run_async).start()
-
-def handle_menu_registered(event,source_type,data):
-    button_chunks = chunk_buttons(MENU_LIST_USER)
-    username = data['username']
-
-    columns = []
-    for i, chunk in enumerate(button_chunks):
-        actions = [MessageAction(label=btn["label"], text=btn["data"]) for btn in chunk]
-
-        if i == 0:
-            column = CarouselColumn(title="PinMarker Bot",text=f"Hello @{username}, please choose an option :",actions=actions)
-        else:
-            column = CarouselColumn(title="PinMarker Bot", text="Choose an option :", actions=actions)
-
-        columns.append(column)
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        TemplateSendMessage(
-            alt_text="Choose an option :",
-            template=CarouselTemplate(columns=columns)
-        )
-    )
-
-def handle_menu_unregistered(event,source_type):
-    senderId = get_sender_id(event)
-
-    send_message_text(senderId, GREETING_MSG)
-    send_message_text(senderId, GREETING_UNKNOWN_USER_MSG)
-
-    if source_type == "group":
-        button_chunks = chunk_buttons(MENU_LIST_UNKNOWN_GROUP)
-
-    columns = []
-    for _, chunk in enumerate(button_chunks):
-        actions = [MessageAction(label=btn["label"], text=btn["data"]) for btn in chunk]
-        columns.append(CarouselColumn(
-            title="PinMarker Bot",
-            text="Choose an option :",
-            actions=actions
-        ))
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        TemplateSendMessage(
-            alt_text="Choose an option :",
-            template=CarouselTemplate(columns=columns)
-        )
-    )
+        threading.Thread(target=bot_history_command, args=(senderId,)).start()
 

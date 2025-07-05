@@ -31,7 +31,6 @@ ASK_NAME_REGISTER_MSG = "What name would you like to use for this room? (must be
 DETECT_LINK= "Hey there! 😊 I noticed you sent a link. Would you like me to add a new marker?"
 ASK_COORDINATE= "If so, please share your location or send me a coordinate (latitude, longitude)"
 ASK_PIN_NAME= "What's the name of this marker?"
-ASK_PIN_CATEGORY= "Now, please choose a category for this place"
 DETECT_SHARELOC_NEW= "Hey there! 😊 I noticed you sent a shared location. I've checked the coordinates you sent, and it looks like this spot is a new location.\n\nWould you like me to add a new marker?"
 THANKS_PIN_CREATE="Awesome! 🎉 Your new location has been added to the map"
 # Others
