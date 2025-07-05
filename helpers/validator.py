@@ -44,7 +44,7 @@ def validate_data(data, field_name: str, field_type: str, max_length: int = None
     elif not is_required and data is None:
         res = None
 
-    if len(res) == 0:
+    if res is not None and len(res) == 0:
         return None
     else:
         return res

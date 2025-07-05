@@ -271,3 +271,34 @@ async def api_get_pin_detail_by_name(userId: str, pin_name:str):
     except KeyError:
         err_msg = "Error processing the response"
         return err_msg, None, None
+
+async def api_post_create_pin(data, user_id: str):
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"http://127.0.0.1:8000/api/v1/pin",
+                json={
+                "pin_name": data['pin_name'],
+                "pin_desc": data['pin_desc'],
+                "pin_lat": data['pin_lat'],
+                "pin_long": data['pin_long'],
+                "pin_category": data['pin_category'],
+                "pin_address": data['pin_address'],
+                "is_favorite":False,
+                "created_by": user_id
+            })
+            print("HTTPStatusError response:", response.text)
+            response.raise_for_status()
+            data = response.json()
+
+            return data['message'], True
+    except httpx.HTTPStatusError as e:
+        print("HTTPStatusError response:", e.response.text)
+        if e.response.status_code == 422:
+            return data['errors'], False
+        else:
+            return e, None
+    except requests.exceptions.RequestException as e:
+        return e, None
+    except KeyError:
+        err_msg = "Error processing the command"
+        return err_msg, None
