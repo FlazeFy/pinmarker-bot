@@ -14,7 +14,7 @@ from services.modules.callback.line import line_bot_api, handler
 from helpers.converter import strip_html_tags
 from helpers.validator import contains_link
 from helpers.sqlite.template import post_ai_command
-from bots.line.helper import get_sender_id, send_message_text, send_location_text
+from bots.line.helper import get_sender_id, send_message_text, send_location_text, send_message_error
 # Repo
 from bots.repositories.repo_pin import api_get_all_pin, api_get_all_pin_name, api_get_all_pin_export
 from bots.repositories.repo_bot_history import api_get_command_history
@@ -22,6 +22,7 @@ from bots.repositories.repo_track import api_get_last_track
 from bots.repositories.repo_visit import api_get_visit_history
 from bots.repositories.repo_stats import api_get_dashboard
 from bots.repositories.repo_bot_relation import api_post_check_bot_relation, api_post_create_bot_relation
+from bots.repositories.repo_dictionary import api_get_dictionary_by_type
 
 group_register_state = {}
 marker_create_state = {}
@@ -69,70 +70,131 @@ def handle_message(event):
                 return
             
             #   Marker Creation Flow
-            if marker_create_state:
-                if marker_create_state == 'awaiting_coordinate':
-                    # Validate coordinate format
-                    parts = message_text.split(',')
-                    if len(parts) == 2:
-                        try:
-                            lat = float(parts[0].strip())
-                            lon = float(parts[1].strip())
-                            marker_create_state[senderId] = {
-                                'awaiting': 'awaiting_pin_name',
-                                'lat': lat,
-                                'lon': lon
-                            }
-                            send_message_text(senderId, ASK_PIN_NAME)
-                            return
-                        except ValueError:
-                            send_message_text(senderId, "Please send valid coordinates (e.g., '-6.2000, 106.8166')")
-                            return
-                    else:
-                        send_message_text(senderId, "Please send coordinates in the format: latitude, longitude")
-                        return
+            user_state = marker_create_state.get(senderId)
 
-                elif isinstance(marker_create_state, dict) and marker_create_state.get('awaiting') == 'awaiting_pin_name':
-                    marker_create_state['name'] = message_text
-                    marker_create_state['awaiting'] = 'awaiting_category'
-                    send_message_text(senderId, ASK_PIN_CATEGORY)
+            if user_state == 'awaiting_coordinate':
+                parts = message_text.split(',')
+                if len(parts) == 2:
+                    try:
+                        lat = float(parts[0].strip())
+                        lon = float(parts[1].strip())
+                        marker_create_state[senderId] = {
+                            'step': 'awaiting_pin_name',
+                            'lat': lat,
+                            'lon': lon
+                        }
+                        send_message_text(senderId, ASK_PIN_NAME)
+                        return
+                    except ValueError:
+                        send_message_text(senderId, "Please send valid coordinates (e.g., '-6.2000, 106.8166')")
+                        return
+                else:
+                    send_message_text(senderId, "Please send coordinates in the format: latitude, longitude")
                     return
 
-                elif isinstance(marker_create_state, dict) and marker_create_state.get('awaiting') == 'awaiting_category':
-                    marker_create_state['category'] = message_text
+            elif isinstance(user_state, dict) and user_state.get('step') == 'awaiting_pin_name':
+                marker_create_state[senderId]['name'] = message_text
+                marker_create_state[senderId]['step'] = 'awaiting_category'
 
-                    # Repo : Create Marker
-                    # ....
+                # Repo : Get Dictionary (Pin Category By Type)
+                # Repo : Check Bot Relation
+                _, msg, data_relation = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+                if data_relation is not None:
+                    msg, data = loop.run_until_complete(api_get_dictionary_by_type('pin_category', data_relation['created_by']))
+                else:
+                    send_message_error(senderId, msg)
+                    return
+
+                # Marker Creation Flow : Show category options via menu
+                if data is not None:
+                    columns_pin_category = []
+                    for _, dt in enumerate(data):
+                        columns_pin_category.append(
+                            {"label": dt['dictionary_name'], "data": f"/category_{dt['dictionary_name'].replace(' ','_')}"}
+                        )
+
+                    button_chunks = chunk_buttons(columns_pin_category)
+                    columns = []
+                    for _, chunk in enumerate(button_chunks):
+                        actions = [MessageAction(label=btn["label"], text=btn["data"]) for btn in chunk]
+                        columns.append(CarouselColumn(
+                            title="PinMarker Bot",
+                            text="Choose a category :",
+                            actions=actions
+                        ))
+
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TemplateSendMessage(
+                            alt_text="Choose a category :",
+                            template=CarouselTemplate(columns=columns)
+                        )
+                    )
+                else:
+                    send_message_error(senderId, msg)
+
+            elif isinstance(user_state, dict) and user_state.get('step') == 'awaiting_category':
+                if message_text.startswith("/category_"):
+                    category = message_text.replace("category_", "")
+                    marker_create_state[senderId]['category'] = category
+
+                    # Repo: Create marker
+                    # loop.run_until_complete(api_post_create_marker(
+                    #     sender_id=senderId,
+                    #     latitude=marker_create_state[senderId]['lat'],
+                    #     longitude=marker_create_state[senderId]['lon'],
+                    #     name=marker_create_state[senderId]['name'],
+                    #     category=category
+                    # ))
 
                     send_message_text(senderId, THANKS_PIN_CREATE)
                     del marker_create_state[senderId]
                     return
 
+            # Marker Creation Flow : Detect link to start marker creation
             if contains_link(message_text) and group_register_state.get(senderId) != 'awaiting_group_name':
-                send_message_text(senderId, DETECT_LINK)
+                # Repo : Check Bot Relation
+                is_registered, err, _ = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
+                if is_registered and err is None:
+                    send_message_text(senderId, DETECT_LINK)
 
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TemplateSendMessage(
-                        alt_text="Choose an option :",
-                        template=CarouselTemplate(columns=CarouselColumn(
-                            title="Add a New Marker",
-                            text="Choose an option :",
-                            actions=[
-                                MessageAction(label="Yes, save it!", text="yes_create_marker"),
-                                MessageAction(label="No, ignore this", text="no_create_marker")
-                            ]
-                        ))
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TemplateSendMessage(
+                            alt_text="Choose an option :",
+                            template=CarouselTemplate(columns=[
+                                CarouselColumn(
+                                    title="Add a New Marker",
+                                    text="Choose an option :",
+                                    actions=[
+                                        MessageAction(label="Yes, save it!", text="/yes_create_marker"),
+                                        MessageAction(label="No, ignore this", text="/no_create_marker")
+                                    ]
+                                )
+                            ])
+                        )
                     )
-                )
+                    return
+                elif not is_registered and err is None:
+                    return 
+                else:
+                    send_message_error(senderId, err)
+                    return 
 
-            if message_text == "/yes_create_marker" and group_register_state.get(senderId) != 'awaiting_group_name':
+            # Marker Creation Flow : Respond when detect link
+            if message_text == "/yes_create_marker":
                 send_message_text(senderId, ASK_COORDINATE)
                 marker_create_state[senderId] = 'awaiting_coordinate'
                 return
+
+            if message_text == "/no_create_marker":
+                send_message_text(senderId, "Okay, noted it 🫡")
+                marker_create_state.pop(senderId, None)
+                return
             
-            if message_text == "/no_create_marker" and group_register_state.get(senderId) != 'awaiting_group_name':
-                send_message_text(senderId, ASK_COORDINATE)
-                marker_create_state[senderId] = {}
+            if message_text == "/register_group" and source_type in ['group', 'room']:
+                group_register_state[senderId] = 'awaiting_group_name'
+                send_message_text(senderId, ASK_NAME_REGISTER_MSG)
                 return
 
             # Start Command
@@ -141,20 +203,19 @@ def handle_message(event):
                 is_registered, err, data = loop.run_until_complete(api_post_check_bot_relation(senderId, source_type))
 
                 # Define Menu
-                if is_registered:
-                    if keyword_start:
-                        handle_menu_registered(event, source_type, data)
+                if err is None:
+                    if is_registered:
+                        if keyword_start:
+                            handle_menu_registered(event, source_type, data)
+                        else:
+                            handle_command(event, data)
                     else:
-                        handle_command(event, data)
-                else:
-                    if message_text == "/register_group" and source_type in ['group', 'room']:
-                        group_register_state[senderId] = 'awaiting_group_name'
-                        send_message_text(senderId, ASK_NAME_REGISTER_MSG)
-                    elif keyword_start:
                         handle_menu_unregistered(event, source_type)
+                else: 
+                    send_message_error(senderId, err)
 
         except Exception as e:
-            send_message_text(senderId, "Error processing the response")
+            send_message_text(senderId, e.args)
         finally:
             loop.close()
 

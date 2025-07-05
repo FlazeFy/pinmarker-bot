@@ -32,6 +32,14 @@ def send_message_text(senderId, message: str):
     else:
         logging.info(f"[TEST] Message send to {senderId}: {message}")
 
+def send_message_error(senderId, message: str):
+    if IS_TEST_MODE == "false":
+        line_bot_api.push_message(senderId, TextSendMessage(text="Error processing the response"))
+    else:
+        logging.info(f"[TEST] Message send to {senderId}: Error processing the response")
+
+    logging.info(f"[ERROR] Message send to {senderId}: Error processing the response")
+
 def send_location_text(senderId, title, address: str, lat, long):
     if IS_TEST_MODE == "false":
         line_bot_api.push_message(
